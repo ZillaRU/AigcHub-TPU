@@ -1,0 +1,6 @@
+pillow
+fastapi[standard]
+numpy
+torch==2.0.1
+https://github.com/ZillaRU/AigcHub-TPU/releases/download/v0.1/sophon_arm-3.5.0-py3-none-any.whl
+https://github.com/ZillaRU/AigcHub-TPU/releases/download/v0.1/tpu_perf-1.2.35-py3-none-manylinux2014_aarch64.whl
