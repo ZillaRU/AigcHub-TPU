@@ -1,0 +1,4 @@
+face_gen, https://github.com/ZillaRU/roop_face.git
+sd_lcm_tpu, https://github.com/ZillaRU/SD-lcm-tpu.git
+chattts, https://github.com/ZillaRU/ChatTTS-ONNX.git
+emotivoice, https://github.com/ZillaRU/EmotiVoice-TPU.git
