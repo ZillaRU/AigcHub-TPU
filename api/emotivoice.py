@@ -3,16 +3,12 @@ import base64
 from api.base_api import BaseAPIRouter, change_dir, init_helper
 import os
 from typing import Optional
-import sys
 import uuid
 
 class AppInitializationRouter(BaseAPIRouter):
     dir = "repo/emotivoice"
     @init_helper(dir)
     async def init_app(self):
-        # ori_dir = os.getcwd()
-        # sys.path.append(os.path.join(ori_dir, self.dir))
-        # os.chdir(self.dir)
         from repo.emotivoice.demo_page import get_models
         models, tone_color_converter, g2p, lexicon = get_models()
         self.models = {
@@ -21,10 +17,6 @@ class AppInitializationRouter(BaseAPIRouter):
             "g2p": g2p, 
             "lexicon": lexicon
         }
-        
-        # sys.path.pop()
-        # os.chdir(ori_dir)
-        # self.initialized = True
         return {"message": f"应用 {self.app_name} 已成功初始化。"}
     
     async def destroy_app(self):

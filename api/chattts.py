@@ -2,13 +2,12 @@ import io
 import sys
 import zipfile
 from fastapi.responses import StreamingResponse
-
-from typing import Optional
+from typing import List, Optional
 
 from repo.chattts import ChatTTS
 from api.base_api import BaseAPIRouter
 from repo.chattts.tools.audio import pcm_arr_to_mp3_view
-from repo.chattts.tools.logger import get_logger
+from utils.logger import get_logger
 import torch
 
 
@@ -17,22 +16,22 @@ from pydantic import BaseModel
 logger = get_logger("Command")
 
 
-app_name = "chattts"
-router = BaseAPIRouter(app_name=app_name)
+class ChatTTSRouter(BaseAPIRouter):
+    async def init_app(self):
+        self.models['chattts'] = ChatTTS.Chat(logger)
+        logger.info("Initializing ChatTTS...")
+        if self.models['chattts'].load():
+            logger.info("Models loaded successfully.")
+        else:
+            logger.error("Models load failed.")
+            sys.exit(1)
 
-@router.post("/initialize")
-async def initialize_app():
-    router.models['chattts'] = ChatTTS.Chat(get_logger("ChatTTS"))
-    logger.info("Initializing ChatTTS...")
-    if router.models['chattts'].load():
-        logger.info("Models loaded successfully.")
-    else:
-        logger.error("Models load failed.")
-        sys.exit(1)
+# 实例化路由器
+router = ChatTTSRouter(app_name="chattts")
 
 
 class ChatTTSParams(BaseModel):
-    text: list[str]
+    text: List[str]
     stream: bool = False
     lang: Optional[str] = None
     skip_refine_text: bool = False

@@ -1,2 +1,5 @@
+#!/bin/bash
 source hub_venv/bin/activate
-fastapi run main_hub.py
+export NO_ALBUMENTATIONS_UPDATE=1
+python main_hub.py --host 0.0.0.0 --port 8000 "$@"
+# fastapi run main_hub.py

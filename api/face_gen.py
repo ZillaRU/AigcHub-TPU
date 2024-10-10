@@ -4,19 +4,16 @@ from io import BytesIO
 from PIL import Image
 import numpy as np
 from api.base_api import BaseAPIRouter, change_dir, init_helper
-from fastapi import HTTPException, Response
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from repo.roop_face.roop import swap_face, setup_model
 from repo.roop_face.roop.inswappertpu import INSwapper
-import os
 
 
 class AppInitializationRouter(BaseAPIRouter):
     dir = "repo/roop_face"
     @init_helper(dir)
     async def init_app(self):
-        # 假设 INSwapper 和 setup_model 已经被定义
         self.models['face_swapper'] = INSwapper("./bmodel_files")
         self.models['restorer'] = setup_model('./bmodel_files/codeformer_1-3-512-512_1-235ms.bmodel')
         return {"message": f"Application {self.app_name} has been initialized successfully."}
@@ -31,12 +28,10 @@ router = AppInitializationRouter(app_name=app_name)
 class FaceSwapRequest(BaseModel):
     source_img: str = Field(..., description="Base64 encoded source image")
     target_img: str = Field(..., description="Base64 encoded target image")
-    payload: dict = Field(..., description="Additional payload")
 
 class FaceEnhanceRequest(BaseModel):
     image: str = Field(..., description="Base64 encoded image to enhance")
     restorer_visibility: float = Field(1.0, description="Visibility for the restorer")
-    payload: dict = Field(..., description="Additional payload")
 
 @router.post("/face_swap")
 @change_dir(router.dir)

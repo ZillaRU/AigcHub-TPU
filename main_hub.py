@@ -1,55 +1,79 @@
-from fastapi import FastAPI, Request, APIRouter
+from fastapi import FastAPI
 from api.base_api import InitMiddleware
-from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.responses import Response
 import asyncio
 import os
 import sys
-
 from fastapi import FastAPI, HTTPException
 import importlib
 
+import argparse
+
+parser = argparse.ArgumentParser(description="Run AigcHub API")
+parser.add_argument('--host', type=str, default='0.0.0.0', help='Host on which to run the API')
+parser.add_argument('--port', type=int, default=8000, help='Port on which to run the API')
+parser.add_argument('module_names', nargs='+', help='List of App module names to load')
+args = parser.parse_args()
+
 app = FastAPI()
 
-@app.post("/init/{module_name}")
-async def init_module(module_name: str):
-    try:
-        apps_file = "apps.txt"
-        repo_dir = "repo"
-        module_found = False
+tags_metadata = [
+    {
+        "name": "Init",
+        "description": "应用初始化相关操作"
+    },
+    {
+        "name": "Image",
+        "description": "图像处理与生成"
+    },
+    {
+        "name": "Audio",
+        "description": "音频处理与生成"
+    },
+    {
+        "name": "Text",
+        "description": "文本处理与生成"
+    },
+]
 
-        # 读取 apps.txt 文件
-        with open(apps_file, "r") as file:
-            lines = file.readlines()
-            for line in lines:
-                name, url = line.strip().split(", ")
-                if name == module_name:
-                    module_found = True
-                    break
+# @app.post("/init/{module_name}", tags=["Init"])
+# async def init_module(module_name: str):
+#     try:
+#         apps_file = "apps.txt"
+#         repo_dir = "repo"
+#         module_found = False
 
-        if not module_found:
-            raise HTTPException(status_code=404, detail=f"Module {module_name} not found.")
+#         # 读取 apps.txt 文件
+#         with open(apps_file, "r") as file:
+#             lines = file.readlines()
+#             for line in lines:
+#                 name, url = line.strip().split(", ")
+#                 if name == module_name:
+#                     module_found = True
+#                     break
 
-        # 执行 prepare.sh 和 download.sh
-        prepare_script = os.path.join(repo_dir, module_name, "prepare.sh")
-        download_script = os.path.join(repo_dir, module_name, "download.sh")
+#         if not module_found:
+#             raise HTTPException(status_code=404, detail=f"Module {module_name} not found.")
 
-        if os.path.exists(prepare_script):
-            os.chmod(prepare_script, 0o755)
-            process = await asyncio.create_subprocess_shell(f"{prepare_script}", stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
-            stdout, stderr = await process.communicate()
-            if process.returncode != 0:
-                raise HTTPException(status_code=500, detail=f"Error running prepare.sh: {stderr.decode()}")
+#         # 执行 prepare.sh 和 download.sh
+#         prepare_script = os.path.join(repo_dir, module_name, "prepare.sh")
+#         download_script = os.path.join(repo_dir, module_name, "download.sh")
 
-        if os.path.exists(download_script):
-            os.chmod(download_script, 0o755)
-            asyncio.create_task(asyncio.create_subprocess_shell(f"{download_script}", stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE))
+#         if os.path.exists(prepare_script):
+#             os.chmod(prepare_script, 0o755)
+#             process = await asyncio.create_subprocess_shell(f"{prepare_script}", stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+#             stdout, stderr = await process.communicate()
+#             if process.returncode != 0:
+#                 raise HTTPException(status_code=500, detail=f"Error running prepare.sh: {stderr.decode()}")
 
-        os.execv(sys.executable, ['python3'] + sys.argv)
+#         if os.path.exists(download_script):
+#             os.chmod(download_script, 0o755)
+#             asyncio.create_task(asyncio.create_subprocess_shell(f"{download_script}", stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE))
 
-        return {"message": f"Module {module_name} initialized successfully."}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+#         os.execv(sys.executable, ['python3'] + sys.argv)
+
+#         return {"message": f"Module {module_name} initialized successfully."}
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))
 
 # 保存当前工作目录
 original_dir = os.getcwd()
@@ -57,7 +81,7 @@ original_dir = os.getcwd()
 # 假设所有模块都在一个父目录下
 parent_dir = "./api"
 sys.path.append(parent_dir)
-module_names = ['emotivoice', 'face_gen'] # 'image_gen', 
+module_names = args.module_names
 
 routers = []
 
@@ -73,14 +97,24 @@ for module_name in module_names:
 # 添加中间件，传入所有需要初始化的 routers
 app.add_middleware(InitMiddleware, routers=routers)
 
+# 从apps.txt获取应用信息
+app_meta_info = {}
+
+apps_file = "apps.txt"
+with open(apps_file, "r") as file:
+    lines = file.readlines()
+    for line in lines:
+        name, _, tag = line.strip().split(", ")
+        app_meta_info[name] = tag
+
 # 注册路由
 for router in routers:
-    app.include_router(router, )
-
-
-# app.include_router(face_gen.router, tags=['face edit', 'face enhancement', 'face swap'], prefix='/face_gen')
-# app.include_router(chattts.router, tags=['chat tts', 'chatting audio generation', 'ChatTTS'], prefix='/chattts')
+    app.include_router(router, prefix='/'+router.app_name, tags=[app_meta_info[router.app_name]])
 
 @app.get("/")
 def read_root():
-    return {"message": "Hello, enjoy the service of Airbox!"}
+    return {"message": "Hello, enjoy the services supported by Airbox!"}
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host=args.host, port=args.port)

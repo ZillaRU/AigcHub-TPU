@@ -4,10 +4,9 @@ import random
 from PIL import Image
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
-import numpy as np
 from pydantic import BaseModel, Field
 from api.base_api import BaseAPIRouter, change_dir, init_helper
-import os, sys
+import os
 
 TEST=False
 DEVICE_ID=os.environ.get('DEVICE_ID', 0)
