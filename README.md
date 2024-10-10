@@ -40,6 +40,7 @@ bash scripts/init_app.sh app.txt中的模块名称
 ### 3. 启动指定的后端服务
 - 执行`bash scripts/run.sh 模块名称`
 模块名称可以是多个，用空格分隔。例如，同时启动生图和换脸应用`bash scripts/run.sh image_gen roop_face`。
+
 ![执行run.sh后，后台输出如下信息](docs/assets/readme_run.png)
 
 请注意，由于Airbox的 TPU 内存限制，部分应用不能同时启动，内存修改的方法请参考[docs](https://docs.radxa.com/sophon/airbox/local-ai-deploy/ai-tools/memory_allocate)。
