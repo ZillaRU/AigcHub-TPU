@@ -68,7 +68,7 @@ SG2300X可用的 runtime API 包括：
 - 在 api 目录下定义 FastAPI 接口。每一个py文件中定义了一个router，可参考已有的例子。
 - FastAPI的更多具体用法请参考[docs](https://fastapi.tiangolo.com/tutorial/)。
 
-此处以 emotivoice 的 api 为例讲解。
+此处以[emotivoice 的 api](../api/emotivoice.py)为例讲解。
 ```python
 from pydantic import BaseModel, Field
 import base64
