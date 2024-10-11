@@ -22,7 +22,7 @@
 
 
 ## 如何使用 AigcHub 中的已有应用
-使用上一节列表中的应用，仅需要按照以下步骤。
+用户使用上一节列表中的应用，仅需要按照以下步骤操作。
 ### 1. 下载本项目并初始化环境 (初次使用 AigcHub)
 ```sh
 git clone https://github.com/ZillaRU/AigcHub-TPU.git && bash scripts/init_env.sh
