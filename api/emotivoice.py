@@ -5,8 +5,10 @@ import os
 from typing import Optional
 import uuid
 
+app_name = "emotivoice"
+
 class AppInitializationRouter(BaseAPIRouter):
-    dir = "repo/emotivoice"
+    dir = f"repo/{app_name}"
     @init_helper(dir)
     async def init_app(self):
         from repo.emotivoice.demo_page import get_models
@@ -22,7 +24,7 @@ class AppInitializationRouter(BaseAPIRouter):
     async def destroy_app(self):
         del models, tone_color_converter, g2p, lexicon
 
-app_name = "emotivoice"
+
 router = AppInitializationRouter(app_name=app_name)
 
 class TTSRequest(BaseModel):

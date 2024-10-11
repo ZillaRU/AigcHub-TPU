@@ -33,11 +33,18 @@ for app_name in "$@"; do
     url=$(echo $url | xargs) 
     echo "Found URL for $app_name: $url"
 
-    # 克隆仓库的 aigchub 分支
-    git clone -b aigchub --single-branch "$url" "$repo_dir/$app_name"
-    if [ $? -ne 0 ]; then
-        echo "Failed to clone $url"
-        continue
+    # 如果已经有仓库， pull最新的仓库
+    if [ -d "$repo_dir/$app_name/.git" ]; then
+        cd "$repo_dir/$app_name"
+        git pull
+        cd - > /dev/null
+    else
+        #  clone 仓库的 aigchub 分支
+        git clone -b aigchub --single-branch "$url" "$repo_dir/$app_name"
+        if [ $? -ne 0 ]; then
+            echo "Failed to clone $url"
+            continue
+        fi
     fi
 
     # 进入仓库目录

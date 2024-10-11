@@ -5,3 +5,4 @@
 *venv
 repo/*
 !repo/__init__.py
+debug

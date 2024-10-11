@@ -48,8 +48,10 @@ def get_shape_by_ratio(width, height):
     print(nshape)
     return nshape
 
+app_name = "sd_lcm_tpu"
+
 class AppInitializationRouter(BaseAPIRouter):
-    dir = "repo/sd_lcm_tpu"
+    dir = f"repo/{app_name}"
     @init_helper(dir)
     async def init_app(self):
         # ori_dir = os.getcwd()
@@ -67,7 +69,7 @@ class AppInitializationRouter(BaseAPIRouter):
         del self.models['pipeline']
         return {"message": f"Application {self.app_name} has been destroyed successfully."}
 
-app_name = "sd_lcm_tpu"
+
 router = AppInitializationRouter(app_name=app_name)
 
 class T2IRequest(BaseModel):

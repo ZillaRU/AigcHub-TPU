@@ -9,9 +9,10 @@ from fastapi.encoders import jsonable_encoder
 from repo.roop_face.roop import swap_face, setup_model
 from repo.roop_face.roop.inswappertpu import INSwapper
 
+app_name = "roop_face"
 
 class AppInitializationRouter(BaseAPIRouter):
-    dir = "repo/roop_face"
+    dir = f"repo/{app_name}"
     @init_helper(dir)
     async def init_app(self):
         self.models['face_swapper'] = INSwapper("./bmodel_files")
@@ -22,7 +23,7 @@ class AppInitializationRouter(BaseAPIRouter):
         del self.models['face_swapper']
         del self.models['restorer']
     
-app_name = "roop_face"
+
 router = AppInitializationRouter(app_name=app_name)
 
 class FaceSwapRequest(BaseModel):

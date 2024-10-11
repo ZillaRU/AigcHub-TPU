@@ -10,8 +10,9 @@
 |--------------|-------------------| ------------------|
 | roop_face | https://github.com/ZillaRU/roop_face.git | 人像换脸、人脸修复、人脸增强 |
 | sd_lcm_tpu | https://github.com/ZillaRU/SD-lcm-tpu.git | 文生图、图生图、语义超分 |
+| img2txt | https://github.com/ZillaRU/ImageSpeaking.git | 看图说话、生成图像描述 |
+| upscaler_tpu | https://github.com/ZillaRU/upscaler_tpu.git | 图像超分 |
 | emotivoice | https://github.com/ZillaRU/EmotiVoice-TPU.git | 文本转语音（支持情感控制）、音色克隆 |
-
 此处的内容与`app.txt`中一致。app.txt中每行的第一列是该仓库作为模块的名称，第二列是对应的 github 仓库地址，第三列是该模块的功能类别。
 
 **注意**：
