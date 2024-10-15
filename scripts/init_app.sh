@@ -29,7 +29,7 @@ for app_name in "$@"; do
     fi
 
     # 解析出GitHub URL
-    IFS=',' read -r name url <<< "$app_info"
+    IFS=',' read -r name url extra <<< "$app_info"
     url=$(echo $url | xargs) 
     echo "Found URL for $app_name: $url"
 
