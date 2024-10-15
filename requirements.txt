@@ -1,3 +1,4 @@
+wheel # avoid error: invalid command 'bdist_wheel'
 pillow
 fastapi[standard]
 numpy
