@@ -13,6 +13,7 @@
 | img2txt | https://github.com/ZillaRU/ImageSpeaking.git | 看图说话、生成图像描述 |
 | upscaler_tpu | https://github.com/ZillaRU/upscaler_tpu.git | 图像超分 |
 | emotivoice | https://github.com/ZillaRU/EmotiVoice-TPU.git | 文本转语音（支持情感控制）、音色克隆 |
+| gptsovits | https://github.com/wlc952/GPT-SoVITS-TPU.git | 音色克隆 |
 
 此处的内容与`app.txt`中一致。app.txt中每行的第一列是该仓库作为模块的名称，第二列是对应的 github 仓库地址，第三列是该模块的功能类别。
 
@@ -42,6 +43,8 @@ bash scripts/init_app.sh app.txt中的模块名称
 ### 3. 启动指定的后端服务
 - 执行`bash scripts/run.sh 模块名称`
 模块名称可以是多个，用空格分隔。例如，同时启动生图和换脸应用`bash scripts/run.sh image_gen roop_face`。
+
+也可以在最后增加`--gradio`参数，同时启动base64编解码器。
 
 ![执行run.sh后，后台输出如下信息](docs/assets/readme_run.png)
 

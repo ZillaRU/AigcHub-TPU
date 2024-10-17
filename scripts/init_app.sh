@@ -1,8 +1,12 @@
 #!/bin/bash
 
+set -e
+set -u
+set -o pipefail
+
 # 确保提供了至少一个应用名称
 if [ $# -eq 0 ]; then
-    echo "Usage: \$0 app_name [app_name2 ...]"
+    echo "Usage: $0 app_name [app_name2 ...]"
     exit 1
 fi
 
@@ -22,7 +26,7 @@ for app_name in "$@"; do
     echo "Processing $app_name..."
 
     # 从文件中查找与应用名称匹配的GitHub URL
-    app_info=$(grep "^$app_name," "$apps_file")
+    app_info=$(grep -m 1 "^$app_name," "$apps_file")
     if [ -z "$app_info" ]; then
         echo "No URL found for $app_name in $apps_file"
         continue
@@ -30,14 +34,14 @@ for app_name in "$@"; do
 
     # 解析出GitHub URL
     IFS=',' read -r name url extra <<< "$app_info"
-    url=$(echo $url | xargs) 
+    url=$(echo "$url" | xargs) 
     echo "Found URL for $app_name: $url"
 
     # 如果已经有仓库， pull最新的仓库
     if [ -d "$repo_dir/$app_name/.git" ]; then
-        cd "$repo_dir/$app_name"
+        pushd "$repo_dir/$app_name"
         git pull
-        cd - > /dev/null
+        popd
     else
         #  clone 仓库的 aigchub 分支
         git clone -b aigchub --single-branch "$url" "$repo_dir/$app_name"
@@ -48,7 +52,7 @@ for app_name in "$@"; do
     fi
 
     # 进入仓库目录
-    cd "$repo_dir/$app_name"
+    pushd "$repo_dir/$app_name"
 
     # 执行仓库中的脚本
     if [ -f "prepare.sh" ]; then
@@ -68,7 +72,7 @@ for app_name in "$@"; do
     fi
 
     # 返回到原始目录
-    cd - > /dev/null
+    popd
 done
 
 echo "All specified apps processed."

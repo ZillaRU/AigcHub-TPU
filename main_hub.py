@@ -90,6 +90,7 @@ for module_name in module_names:
     module_dir = os.path.join(parent_dir, module_name+'.py')
     if not os.path.exists(module_dir):
         print('No repository / module named', module_name)
+        raise ValueError
     module = importlib.import_module(module_name)
     if hasattr(module, 'router'):
         routers.append(module.router)
