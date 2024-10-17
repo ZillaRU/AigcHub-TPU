@@ -4,7 +4,6 @@ import os
 from api.base_api import BaseAPIRouter, change_dir, init_helper
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
-from repo.gptsovits.web_app import GptSovits_long, gptsovits_dir
 import tempfile
 import soundfile as sf
 import logging
@@ -16,6 +15,7 @@ class AppInitializationRouter(BaseAPIRouter):
     dir = f"repo/{app_name}"
     @init_helper(dir)
     async def init_app(self):
+        from repo.gptsovits.web_app import GptSovits_long, gptsovits_dir
         self.gptsovits_long = GptSovits_long(model_path=f"{gptsovits_dir}/models", tokenizer=f"{gptsovits_dir}/g2pw_tokenizer")
         return {"message": f"应用 {self.app_name} 已成功初始化。"}
     

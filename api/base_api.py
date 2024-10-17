@@ -42,6 +42,9 @@ class BaseAPIRouter(APIRouter, ABC):
         super().__init__()
         self.app_name = app_name
         self.dir = f'./repo/{app_name}'
+        if not os.path.exists(self.dir):
+            print(f"******** ERROR *********\nApplication {app_name} not found. \nPlease check whether the app has been installed by init_app.sh.\n************************")
+            raise NotImplementedError
         self.models = {}
         self.initialized = False
 
