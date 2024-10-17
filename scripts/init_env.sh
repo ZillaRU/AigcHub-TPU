@@ -23,4 +23,5 @@ fi
 mkdir -p /data/tmpdir
 source hub_venv/bin/activate
 export TMPDIR=/data/tmpdir # to avoid "no space left" error during pip package installation
+pip install --upgrade pip
 pip3 install -r requirements.txt --cache-dir /data/tmpdir

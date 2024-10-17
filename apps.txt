@@ -3,3 +3,4 @@ sd_lcm_tpu, https://github.com/ZillaRU/SD-lcm-tpu.git, image
 img2txt, https://github.com/ZillaRU/ImageSpeaking.git, image
 upscaler_tpu, https://github.com/ZillaRU/upscaler_tpu.git, image
 emotivoice, https://github.com/ZillaRU/EmotiVoice-TPU.git, audio
+gptsovits, https://github.com/wlc952/GPT-SoVITS-TPU.git, audio
