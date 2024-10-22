@@ -40,7 +40,7 @@ async def gptsovits_api(request: TTSRequest):
             os.makedirs("/data/tmpdir/aigchub")
         audio_path = "/data/tmpdir/aigchub/gptsovits_output.wav"
         sf.write(audio_path, wav_np, sr)
-        logging.info("base64语音转换成功")
+        logging.info("语音转换成功")
         # return {"message": "语音转换成功", "audio_path": audio_path}
         return JSONResponse(content=jsonable_encoder(audio_path), media_type="application/json") # 为方便复制，只返回音频地址
     except Exception as e:
