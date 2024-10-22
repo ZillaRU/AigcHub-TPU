@@ -14,11 +14,23 @@ logging.basicConfig(level=logging.INFO)
 SEQ_LENGTH = 512
 IDS_LENGTH = 196
 
-def layer_norm(x, epsilon=1e-5):
-    mean = np.mean(x, axis=-1, keepdims=True)
-    std = np.std(x, axis=-1, keepdims=True)
-    normalized_x = (x - mean) / (std + epsilon)
-    return normalized_x
+def fm_main(router, audio_path):
+    input_ids = router.hubert.get_input_ids(audio_path)
+    input_ids = np.pad(input_ids, ((0,0),(IDS_LENGTH - input_ids.shape[1], 0)))
+
+    conti = True
+    while conti:
+        answer, _ = router.model.generate(prompt_input_ids=input_ids, speaker_embedding=router.speaker_embedding)
+        if (answer == 0.0).all(): conti = True
+        else:  conti = False
+
+    answer = answer.squeeze()
+    answer = answer - np.min(answer)
+    max_audio=np.max(answer)
+    answer/=max_audio
+    answer = (answer * 32768).astype(np.int16)
+    return answer
+
 
 class AppInitializationRouter(BaseAPIRouter):
     dir = f"repo/{app_name}"
@@ -43,20 +55,7 @@ class TTSRequest(BaseModel):
 @change_dir(router.dir)
 async def gptsovits_api(request: TTSRequest):  
     try:
-        input_ids = router.hubert.get_input_ids(request.q_audio_path)
-        input_ids = np.pad(input_ids, ((0,0),(IDS_LENGTH - input_ids.shape[1], 0)))
-
-        conti = True
-        while conti:
-            answer, _ = router.model.generate(prompt_input_ids=input_ids, speaker_embedding=router.speaker_embedding)
-            if (answer == 0.0).all(): conti = True
-            else:  conti = False
-
-        answer = answer.squeeze()
-        answer = answer - np.min(answer)
-        max_audio=np.max(answer)
-        answer/=max_audio
-        answer = (answer * 32768).astype(np.int16)
+        answer = fm_main(router, request.q_audio_path)
 
         if not os.path.exists("/data/tmpdir/aigchub"):
             os.makedirs("/data/tmpdir/aigchub")
@@ -82,20 +81,7 @@ async def gptsovits_api_base64(request: TTSBase64Request):
             tmp.write(q_audio_base64)
             audio_path = tmp.name
 
-        input_ids = router.hubert.get_input_ids(audio_path)
-        input_ids = np.pad(input_ids, ((0,0),(IDS_LENGTH - input_ids.shape[1], 0)))
-
-        conti = True
-        while conti:
-            answer, _ = router.model.generate(prompt_input_ids=input_ids, speaker_embedding=router.speaker_embedding)
-            if (answer == 0.0).all(): conti = True
-            else:  conti = False
-
-        answer = answer.squeeze()
-        answer = answer - np.min(answer)
-        max_audio=np.max(answer)
-        answer/=max_audio
-        answer = (answer * 32768).astype(np.int16)
+        answer = fm_main(router, audio_path)
 
         # 手动删除文件
         os.remove(audio_path)
