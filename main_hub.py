@@ -114,7 +114,7 @@ for router in routers:
 
 @app.get("/")
 def read_root():
-    return {"message": "Hello, enjoy the services supported by Airbox!"}
+    return {"message": "Hello, enjoy the services supported by Airbox on http://0.0.0.0:8000/docs !"}
 
 if __name__ == "__main__":
     import uvicorn
