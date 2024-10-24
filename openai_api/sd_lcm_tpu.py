@@ -75,7 +75,7 @@ class AppInitializationRouter(BaseAPIRouter):
 router = AppInitializationRouter(app_name=app_name)
 
 
-### 文本转图像，兼容openai api，image/genrations
+### 00 文本转图像，兼容openai api，image/genrations
 class T2IRequest(BaseModel):
     ### 有意义的兼容参数
     prompt: str = Field(..., description="user prompt")
@@ -165,7 +165,7 @@ async def txt2img(request: T2IRequest):
         return JSONResponse(content=jsonable_encoder({'ret_img': [], 'message': str(e)}), media_type="application/json")
 
 
-### 图生图，兼容openai api，images/edits
+### 01 图生图，兼容openai api，images/edits
 class I2IRequest(BaseModel):
     ## 有意义的兼容参数
     image: str = Field(..., description="Base64 encoded source image")
@@ -266,8 +266,7 @@ async def img2img(request: I2IRequest):
         return JSONResponse(content=jsonable_encoder({'ret_img': [], 'message': str(e)}), media_type="application/json")
 
 
-
-#### 图像超分，兼容openai api，images/variations
+#### 02 图像超分，兼容openai api，images/variations
 class UpscaleRequest(BaseModel):
     ## 有意义的兼容参数
     image: str = Field(..., description="the base 64 string of initial image")

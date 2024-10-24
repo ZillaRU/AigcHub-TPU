@@ -61,4 +61,4 @@ async def gptsovits(request: TTSRequest):
         return Response(content=buffer.getvalue(), media_type=f"audio/{response_format}")
 
     except Exception as e:
-        return {"message": f"Error: {str(e)}"}
+        return {"error": str(e), "info": "处理过程中出现错误"}

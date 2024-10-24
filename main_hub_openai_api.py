@@ -11,7 +11,7 @@ import argparse
 parser = argparse.ArgumentParser(description="Run AigcHub API")
 parser.add_argument('--host', type=str, default='0.0.0.0', help='Host on which to run the API')
 parser.add_argument('--port', type=int, default=8000, help='Port on which to run the API')
-parser.add_argument('module_name', type=str, help='App module name to load') ## 一次只加载一个模块
+parser.add_argument('module_names', nargs='+', help='List of App module names to load')
 args = parser.parse_args()
 
 app = FastAPI()

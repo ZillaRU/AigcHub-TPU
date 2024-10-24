@@ -75,4 +75,4 @@ async def gptsovits_api(request: ConversionRequest):
         return content
 
     except Exception as e:
-        return {"info": "处理过程中出现错误", "error": str(e)}
+        return {"error": str(e), "info": "处理过程中出现错误"}
