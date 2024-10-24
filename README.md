@@ -56,3 +56,9 @@ bash scripts/init_app.sh app.txt中的模块名称
 
 - 查看并测试接口：选择对应接口并点击`Try it out`即可在当前选项卡编辑请求并发送，response 将会显示在下方。各 API 的 request定义可以在页面最下方看到。
 ![测试接口](docs/assets/readme_test_api.png)
+
+### 4. 兼容openai api
+
+执行`bash scripts/run_openai_api.sh appname`启动兼容openai api的应用。
+
+以emotivioce模块的TTS任务为例，其Request和返回值与openai的`v1/audio/speech`一致，POST为：`http://0.0.0.0:8000/emotivoice/v1/audio/speech`。POST的形式统一为`f"http://0.0.0.0:8000/{appname}/{openai_api}"`。
