@@ -7,6 +7,23 @@ import uuid
 
 app_name = "emotivoice"
 
+
+def convert(src_wav, tgt_wav, tone_color_converter, get_se, save_path="./temp/output.wav", encode_message=""):
+    try:
+        # extract the tone color features of the source speaker and target speaker
+        source_se, _ = get_se(src_wav, tone_color_converter, target_dir='processed', vad=True)
+        target_se, _  = get_se(tgt_wav, tone_color_converter, target_dir='processed', vad=True)
+    except Exception as e:
+        return {"error": f"Failed to extract speaker embedding: {e}"}
+    tone_color_converter.convert(
+        audio_src_path=src_wav, 
+        src_se=source_se, 
+        tgt_se=target_se, 
+        output_path=save_path,
+        message=encode_message)
+    return save_path
+
+
 class AppInitializationRouter(BaseAPIRouter):
     dir = f"repo/{app_name}"
     @init_helper(dir)
@@ -51,9 +68,11 @@ class ConversionOnlyRequest(BaseModel):
 @router.post("/convert_only")
 @change_dir(router.dir)
 async def conversion_only(request: ConversionOnlyRequest):
-    from repo.emotivoice.demo_page import convert
-    save_path = convert(src_wav=request.src_path, tgt_wav=request.tgt_path,
-                        encode_message='Airbox')
+    from repo.emotivoice.tone_color_conversion import get_se
+    save_path = convert(src_wav=request.src_path, tgt_wav=request.tgt_path, 
+                        tone_color_converter=router.models['tone_color_converter'], get_se=get_se, encode_message='Airbox')
+    if isinstance(save_path, dict):
+        return {"text": save_path['error'], 'info': 'error message'}
     with open(save_path, 'rb') as file:
         audio_data = file.read()
     audio_base64 = base64.b64encode(audio_data).decode()
@@ -68,11 +87,15 @@ class TTSWithConvertRequest(BaseModel):
 @router.post("/converttts")
 @change_dir(router.dir)
 async def tts_api(request: TTSRequest):    
-    from repo.emotivoice.demo_page import tts, convert
-    src_wav = tts(request.text_content, request.emotion, request.speaker, f'./temp/{str(uuid.uuid4())}.wav',
-                  router.models['models'], router.models['g2p'], router.models['lexicon'])
-    res_wav = convert(src_wav, request.tgt_path, encode_message='Airbox')
+    from repo.emotivoice.demo_page import tts
+    from repo.emotivoice.tone_color_conversion import get_se
 
+    src_wav = tts(request.text_content, request.emotion, request.speaker, f'./temp/{str(uuid.uuid4())}.wav',
+                router.models['models'], router.models['g2p'], router.models['lexicon'])
+    res_wav = convert(src_wav=src_wav, tgt_wav=request.tgt_path, 
+                tone_color_converter=router.models['tone_color_converter'], get_se=get_se, encode_message='Airbox')
+    if isinstance(res_wav, dict):
+        return {"text": res_wav['error'], 'info': 'error message'}
     with open(res_wav, 'rb') as file:
         audio_data = file.read()
     audio_base64 = base64.b64encode(audio_data).decode()
