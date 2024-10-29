@@ -7,6 +7,8 @@ from fastapi import Response
 import soundfile as sf
 from pydub import AudioSegment
 import uuid
+from fastapi import File, Form, UploadFile
+
 
 app_name = "emotivoice"
 
@@ -40,26 +42,34 @@ class AppInitializationRouter(BaseAPIRouter):
         return {"message": f"应用 {self.app_name} 已成功初始化。"}
     
     async def destroy_app(self):
-        del models, tone_color_converter, g2p, lexicon
+        del models, tone_color_converter, g2p, lexicon, self.models
 
 router = AppInitializationRouter(app_name=app_name)
 
 
 ### 音色转换；兼容openai api，audio/translation
-class ConversionRequest(BaseModel):
-    ## 有意义的兼容参数
-    file: str = Field(..., description="要转换语音的路径")
-    prompt: str = Field(..., description="参考音色的路径") 
-    ## 无意义的兼容参数
-    response_format: Optional[str] = Field('', description="（形式参数无意义）")
-    model: Optional[str] = Field("", description="（形式参数无意义）")
-    temperature: Optional[float] = Field(0.0, description="（形式参数无意义）")
-
 @router.post("/v1/audio/translation")
 @change_dir(router.dir)
-async def voice_changer(request: ConversionRequest):
+async def voice_changer(
+    file: UploadFile = File(...),
+    ref_file: UploadFile = File(...) # 比 OpenAI 多一个参数    
+):
     from repo.emotivoice.tone_color_conversion import get_se
-    save_path = convert(src_wav=request.file, tgt_wav=request.prompt, tone_color_converter=router.models['tone_color_converter'], get_se=get_se, encode_message='Airbox')
+    import aiofiles
+
+    src_wav = f"/data/tmpdir/aigchub/{file.filename}"
+    os.makedirs(os.path.dirname(src_wav), exist_ok=True)
+    async with aiofiles.open(src_wav, "wb") as buffer:
+        data = await file.read()
+        await buffer.write(data)
+    
+    tgt_wav = f"/data/tmpdir/aigchub/{ref_file.filename}"
+    os.makedirs(os.path.dirname(tgt_wav), exist_ok=True)
+    async with aiofiles.open(tgt_wav, "wb") as buffer:
+        data = await ref_file.read()
+        await buffer.write(data)
+
+    save_path = convert(src_wav=src_wav, tgt_wav=tgt_wav, tone_color_converter=router.models['tone_color_converter'], get_se=get_se, encode_message='Airbox')
     if isinstance(save_path, dict):
         return {"text": save_path['error'], 'info': 'error message'}
 
@@ -78,7 +88,7 @@ class TTSRequest(BaseModel):
 
     ## 专有参数
     emotion: Optional[str] = Field('', description="情感提示（可选）")
-    audio_path: Optional[str] = Field('', description="要参考的目标音色（可选）")
+    audio_path: Optional[str] = Field('', description="要参考的目标音色路径（可选）")
 
     ## 无意义的兼容参数
     model: Optional[str] = Field("", description="（形式参数无意义）")
