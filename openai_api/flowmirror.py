@@ -1,10 +1,10 @@
-from pydantic import BaseModel, Field
+from fastapi import File, UploadFile
 import base64
 import os
 from api.base_api import BaseAPIRouter, change_dir, init_helper
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
-import tempfile
+import aiofiles
 import soundfile as sf
 import logging
 import numpy as np
@@ -51,23 +51,21 @@ router = AppInitializationRouter(app_name=app_name)
 
 
 ### 语音对话；兼容openai api，audio/translation
-class ConversionRequest(BaseModel):
-    ## 有意义的兼容参数
-    file: str = Field(..., description="提问语音的路径")
-    ## 无意义的兼容参数
-    prompt: Optional[str] = Field(..., description="（形式参数无意义）") 
-    response_format: Optional[str] = Field('wav', description="（形式参数无意义）")
-    model: Optional[str] = Field("emotivoice", description="（形式参数无意义）")
-    temperature: Optional[float] = Field(0.0, description="（形式参数无意义）")
-
 @router.post("/v1/audio/translation")
 @change_dir(router.dir)
-async def gptsovits_api(request: ConversionRequest):  
+async def gptsovits_api(
+    file: UploadFile = File(...)
+):  
     try:
-        answer = fm_main(router, request.file)
+        file_path = f"/data/tmpdir/aigchub/{file.filename}"
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        async with aiofiles.open(file_path, "wb") as buffer:
+            data = await file.read()
+            await buffer.write(data)
 
-        if not os.path.exists("/data/tmpdir/aigchub"):
-            os.makedirs("/data/tmpdir/aigchub")
+        answer = fm_main(router, file_path)
+
+        os.remove(file_path)
         audio_path = "/data/tmpdir/aigchub/flowmirror_output.wav"
         sf.write(audio_path, answer, 16000)
         logging.info("语音回答已生成")
