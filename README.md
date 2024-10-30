@@ -17,7 +17,7 @@
 | 6    | gptsovits    | https://github.com/wlc952/GPT-SoVITS-TPU.git  | 音色克隆                             | 2203 MB  |
 | 7    | flowmirror   | https://github.com/wlc952/flow_mirror_tpu.git | 语音对话（目前效果不佳）             | 4375 MB  |
 | 8    | whisper      | https://github.com/wlc952/whisper-TPU         | 语音转文本                           | 844 MB   |
-| 9    | rmbg         | https://github.com/wlc952/rmbg_tpu            | 图像去背景                           |          |
+| 9    | rmbg         | https://github.com/wlc952/rmbg_tpu            | 图像去背景                           | 256 MB   |
 | 10   |              |                                               |                                      |          |
 
 此处的内容与 `app.txt`中一致。app.txt中每行的第一列是该仓库作为模块的名称，第二列是对应的 github 仓库地址，第三列是该模块的功能类别。
