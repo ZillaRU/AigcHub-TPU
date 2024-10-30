@@ -2,7 +2,7 @@
 
 本项目提供 Airbox（算能SG2300X inside）AIGC能力的一站式体验。
 
-- 连接 Airbox 的方式：请参考 [Airbox Wiki](https://docs.radxa.com/sophon/airbox/getting-started/)。
+- 连接 Airbox 的方式：请参考 [Airbox Wiki](https://gitee.com/zilla0717/AirboxWiki)。
 - 当前可以在Airbox运行的应用如[列表](https://gitee.com/zilla0717/AirboxWiki/blob/master/README.md)所示，部分已经接入到本项目。欢迎参考[开发指南](docs/developer_tutorial.md)将这些应用以及其他实用有趣的应用接入进来。
 
 ## 支持应用列表
