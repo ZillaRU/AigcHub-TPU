@@ -30,7 +30,7 @@ python main_hub.py --host 0.0.0.0 --port 8000 "${ARGS[@]}" &
 
 # 如果指定了 --gradio 参数，则启动 Gradio 应用
 if [ "$START_GRADIO" == true ]; then
-    python base64convert.py &
+    python apps_gradio/base64convert.py &
 fi
 
 # 等待所有后台进程结束

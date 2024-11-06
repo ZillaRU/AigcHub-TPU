@@ -39,7 +39,7 @@ tags_metadata = [
 original_dir = os.getcwd()
 
 # 假设所有模块都在一个父目录下
-parent_dir = "./openai_api"
+parent_dir = "./api_openai"
 sys.path.append(parent_dir)
 module_names = args.module_names
 
