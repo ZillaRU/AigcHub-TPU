@@ -18,7 +18,9 @@
 | 7    | flowmirror   | https://github.com/wlc952/flow_mirror_tpu.git | 语音对话（目前效果不佳）             | 4375 MB  |
 | 8    | whisper      | https://github.com/wlc952/whisper-TPU         | 语音转文本                           | 844 MB   |
 | 9    | rmbg         | https://github.com/wlc952/rmbg_tpu            | 图像去背景                           | 256 MB   |
-| 10   |              |                                               |                                      |          |
+| 10   | llm_tpu      | https://github.com/wlc952/llm_aigchub         | 大语言模型                           |          |
+| 11   | sherpa       | https://github.com/wlc952/Kaldi-TPU           | 语音转文本                           |          |
+
 
 此处的内容与 `app.txt`中一致。app.txt中每行的第一列是该仓库作为模块的名称，第二列是对应的 github 仓库地址，第三列是该模块的功能类别。
 
@@ -69,6 +71,6 @@ bash scripts/init_app.sh app.txt中的模块名称
 
 ### 4. 兼容openai api
 
-执行 `bash scripts/run_openai_api.sh appname`启动兼容openai api的应用。
+执行 `bash scripts/run_openai.sh appname`启动兼容openai api的应用。
 
 以emotivioce模块的TTS任务为例，其Request和返回值与openai的 `v1/audio/speech`一致，POST为：`http://0.0.0.0:8000/emotivoice/v1/audio/speech`。POST的形式统一为 `f"http://0.0.0.0:8000/{appname}/{openai_api}"`。
