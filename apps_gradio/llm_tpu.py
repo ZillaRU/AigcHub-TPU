@@ -74,18 +74,18 @@ def shutdown_process():
         print("\n" + mss + "\n")
         yield mss
 
-def launch(model_path, tokenizer_path, temperature, top_p, repeat_penalty, repeat_last_n, max_new_tokens, generation_mode, prompt_mode):
+def launch(model_path, temperature, top_p, repeat_penalty, repeat_last_n, max_new_tokens, generation_mode, prompt_mode):
     global Processing, port_to_use
 
     while not is_port_available(port_to_use):
         port_to_use += 1
 
-    model_type, tokenizer_path = get_model_type(model_path, tokenizer_path)
+    model_type, tokenizer_path = get_model_type(model_path)
     model_path = f"{llm_dir}/bmodels/{model_path}"
     tokenizer_path = f"{llm_dir}/models/{tokenizer_path}"
 
     cmd = [
-        sys.executable, f'models/{model_type}/python_demo/web_demo.py',
+        sys.executable, f'{llm_dir}/models/{model_type}/python_demo/web_demo.py',
         '--model_path', model_path,
         '--tokenizer_path', tokenizer_path,
         '--temperature', str(temperature),
@@ -101,18 +101,15 @@ def launch(model_path, tokenizer_path, temperature, top_p, repeat_penalty, repea
     return run_shell_command(cmd, host_ip, port_to_use)
 
 
-def get_model_type(model_path, tokenizer_path):
+def get_model_type(model_path):
     if "phi3" in model_path.lower():
-        if "phi3" not in tokenizer_path.lower():
-            tokenizer_path = "Phi_3/support/token_config"
-        return "Phi_3", tokenizer_path
+        tokenizer_path = "Phi3/support/token_config"
+        return "Phi3", tokenizer_path
     elif "qwen1.5" in model_path.lower():
-        if "qwen1" not in tokenizer_path.lower():
-            tokenizer_path = "Qwen1_5/token_config"
+        tokenizer_path = "Qwen1_5/token_config"
         return "Qwen1_5", tokenizer_path
     elif "qwen2.5" in model_path.lower():
-        if "qwen2" not in tokenizer_path.lower():
-            tokenizer_path = "Qwen2_5/support/token_config"
+        tokenizer_path = "Qwen2_5/support/token_config"
         return "Qwen2_5", tokenizer_path
     else:
         raise ValueError("Unsupported model")
@@ -125,11 +122,6 @@ with gr.Blocks() as demo:
         label="Model",
         choices=model_choices,
         value=model_choices[0] if model_choices else None
-    )
-    tokenizer_path = gr.Dropdown(
-        label="Tokenizer",
-        choices=["Phi_3/support/token_config", "Qwen1_5/token_config", "Qwen2_5/support/token_config"],
-        value="Qwen1_5/token_config"
     )
     temperature = gr.Slider(label="Temperature", minimum=0.0, maximum=1.0, value=1.0)
     top_p = gr.Slider(label="Top P", minimum=0.0, maximum=1.0, value=1.0)
@@ -160,7 +152,7 @@ with gr.Blocks() as demo:
 
     launch_button.click(
         fn=launch,
-        inputs=[model_path, tokenizer_path, temperature, top_p, repeat_penalty, repeat_last_n, max_new_tokens, generation_mode, prompt_mode],
+        inputs=[model_path, temperature, top_p, repeat_penalty, repeat_last_n, max_new_tokens, generation_mode, prompt_mode],
         outputs=[output_text]
     ).then(launch_and_toggle, inputs=None, outputs=[launch_button, shutdown_button])
 
