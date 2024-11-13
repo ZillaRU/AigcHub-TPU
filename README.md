@@ -7,19 +7,19 @@
 
 ## 支持应用列表
 
-| 序号 | 模块名称     | 功能描述                             | 内存占用 |   兼容openai api | 视频教程 |
-| ---- | ------------ | ----------------------------------- | -------- | -------- | -------- |
-| 1    | [roop_face](https://github.com/ZillaRU/roop_face.git)      | 人像换脸<br>人脸增强         |          | `/v1/images/variations`<br>`/v1/images/edit` |              |
-| 2    | [sd_lcm_tpu](https://github.com/ZillaRU/SD-lcm-tpu.git)     | 文生图<br>图生图<br>语义超分  |          | `/v1/images/generations`<br>`/v1/images/edits`<br>`/v1/images/variations` |              |
-| 3    | [img2txt](https://github.com/ZillaRU/ImageSpeaking.git)  | 看图说话、生成图像描述           |          | `/v1/images/variations` |              |
-| 4    | [upscaler_tpu](https://github.com/ZillaRU/upscaler_tpu.git)   | 图像超分                   |          | `/v1/images/variations` |              |
-| 5    | [emotivoice](https://github.com/ZillaRU/EmotiVoice-TPU.git) | 文本转语音（支持情感控制）<br>音色克隆  |           | `/v1/audio/speech`<br>`/v1/audio/translation` |              |
-| 6    | [gptsovits](https://github.com/wlc952/GPT-SoVITS-TPU.git)  | 音色克隆                       | 2203 MB  | `/v1/audio/speech` |              |
-| 7    | [flowmirror](https://github.com/wlc952/flow_mirror_tpu.git) | 语音对话（目前效果不佳）        | 4375 MB  | `/v1/audio/translation` |              |
-| 8    | [whisper](https://github.com/wlc952/whisper-TPU.git)     | 语音转文本                        | 844 MB   | `/v1/audio/transcriptions` |              |
-| 9    | [rmbg](https://github.com/wlc952/rmbg_tpu.git)        | 图像去背景                           | 256 MB   | `/v1/images/edit` |              |
-| 10   | [llm_tpu](https://github.com/wlc952/llm_aigchub.git)     | 大语言模型                        | ~ 1.5-5 G | `/v1/chat/completions` |              |
-| 11   | [sherpa](https://github.com/wlc952/Kaldi-TPU.git)       | 语音转文本                          |  ~ 255 MB  | `/v1/audio/transcriptions` |              |
+| 模块名称     | 功能描述                             | 内存占用 |   兼容openai api | 视频教程 |
+| ------------ | ----------------------------------- | -------- | -------- | -------- |
+| [roop_face](https://github.com/ZillaRU/roop_face.git)      | 人像换脸<br>人脸增强         |          | `/v1/images/variations`<br>`/v1/images/edit` |              |
+| [sd_lcm_tpu](https://github.com/ZillaRU/SD-lcm-tpu.git)     | 文生图<br>图生图<br>语义超分  |          | `/v1/images/generations`<br>`/v1/images/edits`<br>`/v1/images/variations` |              |
+| [img2txt](https://github.com/ZillaRU/ImageSpeaking.git)  | 看图说话、生成图像描述           |          | `/v1/images/variations` |              |
+| [upscaler_tpu](https://github.com/ZillaRU/upscaler_tpu.git)   | 图像超分                   |          | `/v1/images/variations` |              |
+| [emotivoice](https://github.com/ZillaRU/EmotiVoice-TPU.git) | 文本转语音（支持情感控制）<br>音色克隆  |           | `/v1/audio/speech`<br>`/v1/audio/translation` |              |
+| [gptsovits](https://github.com/wlc952/GPT-SoVITS-TPU.git)  | 音色克隆                       | 2203 MB  | `/v1/audio/speech` |              |
+| [flowmirror](https://github.com/wlc952/flow_mirror_tpu.git) | 语音对话（目前效果不佳）        | 4375 MB  | `/v1/audio/translation` |              |
+| [whisper](https://github.com/wlc952/whisper-TPU.git)     | 语音转文本                        | 844 MB   | `/v1/audio/transcriptions` |              |
+| [rmbg](https://github.com/wlc952/rmbg_tpu.git)        | 图像去背景                           | 256 MB   | `/v1/images/edit` |              |
+| [llm_tpu](https://github.com/wlc952/llm_aigchub.git)     | 大语言模型（Phi3, Qwen1.5, Qwen2.5）| ~ 1.5-5 G | `/v1/chat/completions` |              |
+| [sherpa](https://github.com/wlc952/Kaldi-TPU.git)       | 语音转文本                          |  ~ 255 MB  | `/v1/audio/transcriptions` |              |
 
 此处的内容与 `app.txt`中一致。app.txt中每行的第一列是该仓库作为模块的名称，第二列是对应的 github 仓库地址，第三列是该模块的功能类别。
 
@@ -38,7 +38,7 @@
 git clone https://github.com/ZillaRU/AigcHub-TPU.git && bash scripts/init_env.sh
 ```
 
-### 2. 应用初始化 (初次安装某个应用)
+### 2. 应用初始化（初次安装某个应用）
 
 \* 如果本项目有更新的版本，建议先执行 `git pull`更新本项目代码。
 
@@ -54,7 +54,7 @@ bash scripts/init_app.sh app.txt中的模块名称
 
 ### 3. 启动指定的后端服务
 
-#### 3.1 API 服务 （兼容openai-like api）
+#### 3.1 API 服务（兼容openai-like api）
 
 - 执行 `bash scripts/run.sh 模块名称`
   模块名称可以是多个，用空格分隔。例如，同时启动生图和换脸应用 `bash scripts/run.sh image_gen roop_face`。
@@ -64,21 +64,24 @@ bash scripts/init_app.sh app.txt中的模块名称
   请注意，由于Airbox的 TPU 内存限制，部分应用不能同时启动，内存修改的方法请参考[docs](https://docs.radxa.com/sophon/airbox/local-ai-deploy/ai-tools/memory_allocate)。
 
 - 出现上图中的输出后，浏览器访问 `盒子ip:8000/docs`，此时可以看到后台开始启动各模块的应用。启动完毕后，显示如图：
+  
   ![启动完毕后 API doc](docs/assets/readme_load_done.png)
 - 查看并测试接口：选择对应接口并点击 `Try it out`即可在当前选项卡编辑请求并发送，response 将会显示在下方。各 API 的 request定义可以在页面最下方看到。
+  
   ![测试接口](docs/assets/readme_test_api.png)
 
-- 以whisper模块的TTS任务为例，其Request和返回值与openai的 `/v1/audio/transcriptions`兼容。POST的形式统一为 `f"http://{ip}:8000/{appname}/{openai_api}"`，如：`http://localhost:8000/whisper/v1/audio/transcriptions`
+- 以whisper模块为例，其Request和返回值与openai的 `/v1/audio/transcriptions`兼容。POST的形式统一为 `f"http://{ip}:8000/{appname}/{openai_api}"`，如：`http://localhost:8000/whisper/v1/audio/transcriptions`
 
   ```bash
-  ### 测试命令示例1
+  ### 测试命令示例
   curl http://localhost:8000/whisper/v1/audio/transcriptions \
     -F 'file=@/data/AigcHub-TPU/repo/whisper/datasets/test/demo.wav;type=audio/wav' \
     -F 'model=base'
   ```
 
 - 以llm_tpu模块为例
-![alt text](docs/assets/readme_chat.png)
+  
+  ![alt text](docs/assets/readme_chat.png)
 
 #### 3.2 AigcHub web demo服务
 
