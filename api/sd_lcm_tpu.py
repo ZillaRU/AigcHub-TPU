@@ -4,9 +4,11 @@ import random
 from PIL import Image
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, Field
 from api.base_api import BaseAPIRouter, change_dir, init_helper
-import os
+import os, re
+from typing import Optional
+from fastapi import File, Form, UploadFile
+
 
 TEST=False
 DEVICE_ID=os.environ.get('DEVICE_ID', 0)
@@ -72,38 +74,29 @@ class AppInitializationRouter(BaseAPIRouter):
 
 router = AppInitializationRouter(app_name=app_name)
 
-class T2IRequest(BaseModel):
-    prompt: str = Field(..., description="user prompt")
-    negative_prompt: str = Field(..., description="negative prompt")
-    num_inference_steps: int = Field(..., description="num inference steps")
-    guidance_scale: int = Field(1.0, description="guidance scale")
-    strength: float = Field(0.8, description="strength")
-    seed: int = Field(-1, description="seed")
-    width: int = Field(512, description="width")
-    height: int = Field(512, description="height")
-    sampler_index: str = Field("LCM", description="sampler index")
 
-@router.post("/txt2img")
+### 00 文本转图像，兼容openai api，image/genrations
+@router.post("/v1/images/generations")
 @change_dir(router.dir)
-async def txt2img(request: T2IRequest):
-    """txt2img"""
-    # 从 JSON 数据中获取所需数据
-    prompt = request.prompt
-    negative_prompt = request.negative_prompt
-    num_inference_steps = request.num_inference_steps
-    guidance_scale = request.guidance_scale
-    strength = request.strength
-    seed = request.seed
-    sampler_index = request.sampler_index
-
+async def txt2img(
+    prompt: str = Form(...),
+    size: Optional[str] = Form("512x512"),
+    negative_prompt: Optional[str] = Form(None),
+    num_inference_steps: Optional[int] = Form(5),
+    guidance_scale: Optional[float] = Form(1.0),
+    strength: Optional[float] = Form(0.8),
+    seed: Optional[int] = Form(-1),
+    sampler_index: Optional[str] = Form("LCM")
+):
     if seed == -1:
         seed = random.randint(0, 2 ** 31 - 1)
     subseed = seed # 不可以为-1
     subseed_strength = 0.0
     seed_resize_from_h = 1
     seed_resize_from_w = 1
-    width = int(request.width)
-    height = int(request.height)
+
+    match = re.match(r'^(\d+)\s*(x|\*|×|by|times|,)\s*(\d+)$', size.strip(), re.IGNORECASE)
+    height, width = map(int, match.groups()[0::2])
     
     nwidth, nheight = get_shape_by_ratio(width, height)
     router.models['pipeline'].set_height_width(nwidth, nheight)
@@ -112,8 +105,6 @@ async def txt2img(request: T2IRequest):
     mask = None
     controlnet_args = {}
 
-    init_image = None
-    mask = None 
     try:
         if sampler_index != "LCM":
             num_inference_steps = max(num_inference_steps, 20)
@@ -138,43 +129,43 @@ async def txt2img(request: T2IRequest):
         buffer = io.BytesIO()
         img_pil.save(buffer, format='JPEG')
         ret_img_b64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
-        return JSONResponse(content=jsonable_encoder({'ret_img': [ret_img_b64], 'message': 'success'}), media_type="application/json")
+        content = {
+            "data": [
+                {
+                    "b64_json": ret_img_b64
+                }
+                    ]
+            }
+        return JSONResponse(content=jsonable_encoder(content), media_type="application/json")
     except Exception as e:
         return JSONResponse(content=jsonable_encoder({'ret_img': [], 'message': str(e)}), media_type="application/json")
 
-class I2IRequest(BaseModel):
-    init_image: str = Field(..., description="the base 64 string of initial image")
-    prompt: str = Field(..., description="user prompt")
-    negative_prompt: str = Field(..., description="negative prompt")
-    num_inference_steps: int = Field(..., description="num inference steps")
-    guidance_scale: int = Field(1.0, description="guidance scale")
-    strength: float = Field(0.8, description="strength")
-    seed: int = Field(-1, description="seed")
-    width: int = Field(512, description="width")
-    height: int = Field(512, description="height")
-    sampler_index: str = Field("LCM", description="sampler index")
 
-@router.post("/img2img")
+### 01 图生图，兼容openai api，images/edits
+@router.post("/v1/images/edits")
 @change_dir(router.dir)
-async def img2img(request: I2IRequest):
+async def img2img(
+    image: UploadFile = File(...),
+    prompt: str = Form(...),
+    size: str = Form("512x512"),
+    negative_prompt: Optional[str] = Form(None),
+    num_inference_steps: Optional[int] = Form(5),
+    guidance_scale: Optional[float] = Form(1.0),
+    strength: Optional[float] = Form(0.8),
+    seed: Optional[int] = Form(-1),
+    sampler_index: Optional[str] = Form("LCM")  
+):
     """img2img"""
     # 从 JSON 数据中获取所需数据
-    prompt = request.prompt
-    negative_prompt = request.negative_prompt
-    num_inference_steps = request.num_inference_steps
-    guidance_scale = request.guidance_scale
-    strength = request.strength
-    seed = request.seed
-    sampler_index = request.sampler_index
-
     if seed == -1:
         seed = random.randint(0, 2 ** 31 - 1)
     subseed = seed # 不可以为-1
     subseed_strength = 0.0
     seed_resize_from_h = 1
     seed_resize_from_w = 1
-    width = int(request.width)
-    height = int(request.height)
+
+    match = re.match(r'^(\d+)\s*(x|\*|×|by|times|,)\s*(\d+)$', size.strip(), re.IGNORECASE)
+    height, width = map(int, match.groups()[0::2])
     
     nwidth, nheight = get_shape_by_ratio(width, height)
     router.models['pipeline'].set_height_width(nwidth, nheight)
@@ -183,18 +174,9 @@ async def img2img(request: I2IRequest):
     mask = None
     controlnet_args = {}
 
-    init_image_b64 = request.init_image
-    mask_image_b64 = None
+    ori_image_bytes = await image.read()
+    init_image = Image.open(io.BytesIO(ori_image_bytes))
 
-    if init_image_b64:
-        init_image_b64 = handle_base64_image(init_image_b64)
-        init_image_bytes = io.BytesIO(base64.b64decode(init_image_b64))
-        init_image = Image.open(init_image_bytes) # cv2.cvtColor(np.array(Image.open(init_image_bytes)), cv2.COLOR_RGB2BGR)
-    if init_image_b64 and mask_image_b64:
-        mask = io.BytesIO(base64.b64decode(mask_image_b64))
-        mask[mask > 0] = 255
-    else:
-        mask = None
     try:
         if sampler_index != "LCM":
             num_inference_steps = max(num_inference_steps, 20)
@@ -219,53 +201,44 @@ async def img2img(request: I2IRequest):
         buffer = io.BytesIO()
         img_pil.save(buffer, format='JPEG')
         ret_img_b64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
-        return JSONResponse(content=jsonable_encoder({'ret_img': [ret_img_b64], 'message': 'success'}), media_type="application/json")
+        content = {
+            "data": [
+                {
+                    "b64_json": ret_img_b64
+                }
+                    ]
+            }
+        return JSONResponse(content=jsonable_encoder(content), media_type="application/json")
     except Exception as e:
         return JSONResponse(content=jsonable_encoder({'ret_img': [], 'message': str(e)}), media_type="application/json")
 
-class UpscaleRequest(BaseModel):
-    prompt: str = Field(..., description="user prompt")
-    negative_prompt: str = Field(..., description="negative prompt")
-    num_inference_steps: int = Field(..., description="num inference steps")
-    guidance_scale: int = Field(1.0, description="guidance scale")
-    strength: float = Field(0.8, description="strength")
-    seed: int = Field(-1, description="seed")
-    init_image: str = Field(..., description="the base 64 string of initial image")
-    upscale_by: int = Field(2, description="upscaling factor")
-    sampler_index: str = Field("LCM", description="sampler index")
-    
-@router.post("/upscale")
+
+#### 02 图像超分，兼容openai api，images/variations
+@router.post("/v1/images/variations")
 @change_dir(router.dir)
-async def upscale(request: UpscaleRequest):
-    """upscale"""
-    prompt = request.prompt
-    negative_prompt = request.negative_prompt
-    num_inference_steps = request.num_inference_steps
-    guidance_scale = request.guidance_scale
-    strength = request.strength
-    seed = request.seed
+async def upscale(
+    image: UploadFile = File(...),
+    prompt: Optional[str] = Form(None),
+    negative_prompt: Optional[str] = Form(None),
+    num_inference_steps: Optional[int] = Form(5),
+    guidance_scale: Optional[float] = Form(1.0),
+    strength: Optional[float] = Form(0.8),
+    seed: Optional[int] = Form(-1),
+    upscale_by: Optional[int] = Form(2),
+    sampler_index: Optional[str] = Form("LCM")
+):
     if seed == -1:
         seed = random.randint(0, 2 ** 31 - 1)
-    init_image = None
     mask = None
-    init_image_b64 = request.init_image
-    mask_image_b64 = None
     subseed = seed
     subseed_strength = 0.0
     seed_resize_from_h = 1
     seed_resize_from_w = 1
-    sampler_index = request.sampler_index
-    upscale_factor = request.upscale_by
+    upscale_factor = upscale_by
     
-    if init_image_b64:
-        init_image_b64 = handle_base64_image(init_image_b64)
-        init_image_bytes = io.BytesIO(base64.b64decode(init_image_b64))
-        init_image = Image.open(init_image_bytes) # cv2.cvtColor(np.array(Image.open(init_image_bytes)), cv2.COLOR_RGB2BGR)
-    if init_image_b64 and mask_image_b64:
-        mask = io.BytesIO(base64.b64decode(mask_image_b64))
-        mask[mask > 0] = 255
-    else:
-        mask = None
+    ori_image_bytes = await image.read()
+    init_image = Image.open(io.BytesIO(ori_image_bytes))
+
     controlnet_image = None
     controlnet_args  = {}
     
@@ -313,7 +286,14 @@ async def upscale(request: UpscaleRequest):
         img_pil.save(buffer, format='JPEG')
         ret_img_b64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
         ret_img_b64 = handle_output_base64_image(ret_img_b64)
-        return JSONResponse({'code': 0, 'images': [ret_img_b64]})
+        content = {
+            "data": [
+                {
+                    "b64_json": ret_img_b64
+                }
+                    ]
+            }
+        return JSONResponse(content)
     except Exception as e:
         import traceback
         trace = traceback.format_exc()

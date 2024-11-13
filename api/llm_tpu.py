@@ -128,4 +128,22 @@ async def chat_completions(request: ChatRequest):
         slm.answer_cur = slm.tokenizer.decode(output_tokens)
 
         return JSONResponse({"choices": [{"delta": {"role": "assistant", "content": slm.answer_cur}}]})
+    
 
+# curl --no-buffer -X 'POST' \
+#   'http://localhost:8000/llm_tpu/v1/chat/completions' \
+#   -H 'Content-Type: application/json' \
+#   -d '{
+#   "model": "qwen1.5-1.8b_int8_1dev_seq1280.bmodel",
+#   "messages": [
+#     {
+#       "role": "system",
+#       "content": "You are a helpful assistant."
+#     },
+#     {
+#       "role": "user",
+#       "content": "hello"
+#     }
+#   ],
+#   "stream": true
+# }'
