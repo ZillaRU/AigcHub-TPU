@@ -10,7 +10,7 @@ import socket
 STANDALONE = False
 system = platform.system()
 Processing = []
-port_to_use = 9000
+port_to_use = 5001
 
 llm_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + "/repo/llm_tpu"
 
@@ -59,7 +59,7 @@ def get_host_ip():
 host_ip = get_host_ip()
 
 def run_shell_command(command, host_ip, port_to_use):
-    process = Popen(command)
+    process = Popen(command, cwd=llm_dir)
     Processing.append(process)
     mss = f"============================================================= \n Subprocess running on:  http://{host_ip}:{port_to_use} \n Please wait for the models to load, which may take minutes. \n============================================================="
     print("\n" + mss + "\n")
@@ -81,11 +81,11 @@ def launch(model_path, temperature, top_p, repeat_penalty, repeat_last_n, max_ne
         port_to_use += 1
 
     model_type, tokenizer_path = get_model_type(model_path)
-    model_path = f"{llm_dir}/bmodels/{model_path}"
-    tokenizer_path = f"{llm_dir}/models/{tokenizer_path}"
+    model_path = f"bmodels/{model_path}"
+    tokenizer_path = f"models/{tokenizer_path}"
 
     cmd = [
-        sys.executable, f'{llm_dir}/models/{model_type}/python_demo/web_demo.py',
+        sys.executable, f"models/{model_type}/python_demo/web_demo.py",
         '--model_path', model_path,
         '--tokenizer_path', tokenizer_path,
         '--temperature', str(temperature),

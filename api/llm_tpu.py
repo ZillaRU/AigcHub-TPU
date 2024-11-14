@@ -24,8 +24,8 @@ class AppInitializationRouter(BaseAPIRouter):
         import importlib
 
         self.models = {}
-        self.models_list = os.listdir("bmodels")
-        self.tokenizer_dict = {}
+        models_list = os.listdir("bmodels")
+        tokenizer_dict = {}
 
         for root, dirs, files in os.walk('./models'):
             if 'token_config' in dirs:
@@ -37,7 +37,7 @@ class AppInitializationRouter(BaseAPIRouter):
                     model_name = parts[2]
                 else:
                     model_name = os.path.basename(root)
-                self.tokenizer_dict[model_name] = full_path
+                tokenizer_dict[model_name] = full_path
 
 
         args = argparse.Namespace(
@@ -50,14 +50,13 @@ class AppInitializationRouter(BaseAPIRouter):
             generation_mode="greedy",
             prompt_mode="prompted",
             enable_history=False,
-            lib_path='',
-            decode_mode='basic'
+            lib_path=''
         )
 
-        mm = list(self.tokenizer_dict.keys())
-        nn = list(self.tokenizer_dict.values())
+        mm = list(tokenizer_dict.keys())
+        nn = list(tokenizer_dict.values())
 
-        for model_name in self.models_list:
+        for model_name in models_list:
             id = match_model(model_name, mm)
             if id is None:
                 print(f"Model {model_name} does not match any available model.")
@@ -66,10 +65,10 @@ class AppInitializationRouter(BaseAPIRouter):
             args.model_path = f"bmodels/{model_name}"
             args.tokenizer_path = tokenizer_path
 
-            if 'chat' in sys.modules:
-                del sys.modules['chat']
+            # if 'chat' in sys.modules:
+            #     del sys.modules['chat']
 
-            sys.path.insert(0, f"models/{mm[id]}/python_demo")
+            # sys.path.insert(0, f"models/{mm[id]}/python_demo")
 
             module_name = f"models.{mm[id]}.python_demo.pipeline"
             module = importlib.import_module(module_name)
@@ -78,7 +77,7 @@ class AppInitializationRouter(BaseAPIRouter):
 
             self.models[f"{model_name}"] = model_class(args)
 
-            sys.path.remove(f"models/{mm[id]}/python_demo")
+            # sys.path.remove(f"models/{mm[id]}/python_demo")
 
         return {"message": f"应用 {self.app_name} 已成功初始化。"}
     
@@ -110,7 +109,7 @@ async def chat_completions(request: ChatRequest):
             yield '{"choices": [{"delta": {"role": "assistant", "content": "'
             while True:
                 token = slm.model.forward_next()
-                if token in slm.EOS or slm.model.token_length >= slm.SEQLEN:
+                if token in slm.EOS or slm.model.token_length >= slm.model.SEQLEN:
                     break
                 output_tokens.append(token)
                 response_text = slm.tokenizer.decode([token])
@@ -122,7 +121,7 @@ async def chat_completions(request: ChatRequest):
     else:
         while True:
             token = slm.model.forward_next()
-            if token in slm.EOS or slm.model.token_length >= slm.SEQLEN:
+            if token in slm.EOS or slm.model.token_length >= slm.model.SEQLEN:
                 break
             output_tokens += [token]
         slm.answer_cur = slm.tokenizer.decode(output_tokens)
