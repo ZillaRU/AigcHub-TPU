@@ -118,4 +118,4 @@ def create_app_ui(app_manager):
 if __name__ == "__main__":
     app_manager = AppManager()
     app_store = create_app_ui(app_manager)
-    app_store.queue().launch(server_port=app_manager.port, inbrowser=True)
+    app_store.queue().launch(server_name="0.0.0.0", server_port=app_manager.port, inbrowser=True)
