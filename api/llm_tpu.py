@@ -50,7 +50,7 @@ class AppInitializationRouter(BaseAPIRouter):
             max_new_tokens=1024,
             generation_mode="greedy",
             prompt_mode="prompted",
-            enable_history=False,
+            enable_history=True,
             lib_path=''
         )
 
@@ -100,8 +100,9 @@ async def chat_completions(request: ChatRequest):
         slm = router.models[best_match[0]]
     else:
         slm = router.models['qwen2.5-3b_int4_seq512_1dev.bmodel']
-        
-    tokens = slm.tokenizer.apply_chat_template(request.messages, tokenize=True, add_generation_prompt=True)
+    
+    slm.history = request.messages
+    tokens = slm.tokenizer.apply_chat_template(slm.history, tokenize=True, add_generation_prompt=True)
 
     token = slm.model.forward_first(tokens)
     output_tokens = [token]
@@ -120,7 +121,6 @@ async def chat_completions(request: ChatRequest):
                 response_text = slm.tokenizer.decode([token])
                 yield response_text
             yield '"}}]}'
-
         return StreamingResponse(generate_responses(), media_type="application/json")
     
     else:
@@ -130,7 +130,7 @@ async def chat_completions(request: ChatRequest):
                 break
             output_tokens += [token]
         slm.answer_cur = slm.tokenizer.decode(output_tokens)
-
+        slm.history = []
         return JSONResponse({"choices": [{"delta": {"role": "assistant", "content": slm.answer_cur}}]})
     
 
