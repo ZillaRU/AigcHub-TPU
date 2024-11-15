@@ -6,6 +6,7 @@ import argparse
 import os,sys
 import re
 from pydantic import BaseModel, Field
+from difflib import get_close_matches
 
 app_name = "llm_tpu"
 
@@ -24,7 +25,7 @@ class AppInitializationRouter(BaseAPIRouter):
         import importlib
 
         self.models = {}
-        models_list = os.listdir("bmodels")
+        self.models_list = os.listdir("bmodels")
         tokenizer_dict = {}
 
         for root, dirs, files in os.walk('./models'):
@@ -56,7 +57,7 @@ class AppInitializationRouter(BaseAPIRouter):
         mm = list(tokenizer_dict.keys())
         nn = list(tokenizer_dict.values())
 
-        for model_name in models_list:
+        for model_name in self.models_list:
             id = match_model(model_name, mm)
             if id is None:
                 print(f"Model {model_name} does not match any available model.")
@@ -82,7 +83,7 @@ class AppInitializationRouter(BaseAPIRouter):
         return {"message": f"应用 {self.app_name} 已成功初始化。"}
     
     async def destroy_app(self):
-        del self.models
+        del self.models, self.models_list
 
 router = AppInitializationRouter(app_name=app_name)
 
@@ -94,9 +95,13 @@ class ChatRequest(BaseModel):
 @router.post("/v1/chat/completions")
 @change_dir(router.dir)
 async def chat_completions(request: ChatRequest):
-    slm = router.models[request.model]
+    best_match = get_close_matches(request.model, router.models_list, n=1, cutoff=0.0)
+    if best_match:
+        slm = router.models[best_match[0]]
+    else:
+        slm = router.models['qwen2.5-3b_int4_seq512_1dev.bmodel']
+        
     tokens = slm.tokenizer.apply_chat_template(request.messages, tokenize=True, add_generation_prompt=True)
-
 
     token = slm.model.forward_first(tokens)
     output_tokens = [token]
