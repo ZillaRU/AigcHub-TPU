@@ -113,13 +113,13 @@ async def chat_completions(request: ChatRequest):
     if request.stream:
         def generate_responses():
             yield '{"choices": [{"delta": {"role": "assistant", "content": "'
+            token = output_tokens[0]
             while True:
-                token = slm.model.forward_next()
                 if token in slm.EOS or slm.model.token_length >= slm.model.SEQLEN:
                     break
-                output_tokens.append(token)
                 response_text = slm.tokenizer.decode([token])
                 yield response_text
+                token = slm.model.forward_next()
             yield '"}}]}'
         return StreamingResponse(generate_responses(), media_type="application/json")
     
