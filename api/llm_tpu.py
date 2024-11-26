@@ -25,10 +25,10 @@ class AppInitializationRouter(BaseAPIRouter):
         import importlib
 
         self.models = {}
-        self.models_list = os.listdir("bmodels")
+        self.models_list = os.listdir("llm_bmodels")
         tokenizer_dict = {}
 
-        for root, dirs, files in os.walk('./models'):
+        for root, dirs, files in os.walk('./llm_models'):
             if 'token_config' in dirs:
                 full_path = os.path.join(root, 'token_config')
                 # 分割路径
@@ -63,7 +63,7 @@ class AppInitializationRouter(BaseAPIRouter):
                 print(f"Model {model_name} does not match any available model.")
                 continue
             tokenizer_path = nn[id]
-            args.model_path = f"bmodels/{model_name}"
+            args.model_path = f"llm_bmodels/{model_name}"
             args.tokenizer_path = tokenizer_path
 
             # if 'chat' in sys.modules:
@@ -71,7 +71,7 @@ class AppInitializationRouter(BaseAPIRouter):
 
             # sys.path.insert(0, f"models/{mm[id]}/python_demo")
 
-            module_name = f"models.{mm[id]}.python_demo.pipeline"
+            module_name = f"llm_models.{mm[id]}.python_demo.pipeline"
             module = importlib.import_module(module_name)
 
             model_class = getattr(module, mm[id])
@@ -88,52 +88,87 @@ class AppInitializationRouter(BaseAPIRouter):
 router = AppInitializationRouter(app_name=app_name)
 
 class ChatRequest(BaseModel):
-    model: str = Field("qwen1.5-1.8b_int8_1dev_seq1280.bmodel", description="bmodel file name")
+    model: str = Field("minicpm3-4b_int4_seq512_1dev.bmodel", description="bmodel file name")
     messages: list = Field([{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"hello"}], description="Chat history")
     stream: bool = Field(False, description="Stream response")
 
 @router.post("/v1/chat/completions")
 @change_dir(router.dir)
-async def chat_completions(request: ChatRequest):
+async def chat_completions(request: ChatRequest, ):
     best_match = get_close_matches(request.model, router.models_list, n=1, cutoff=0.0)
     if best_match:
         slm = router.models[best_match[0]]
     else:
-        slm = router.models['qwen2.5-3b_int4_seq512_1dev.bmodel']
+        slm = router.models['minicpm3-4b_int4_seq512_1dev.bmodel']
     
-    slm.history = request.messages
-    tokens = slm.tokenizer.apply_chat_template(slm.history, tokenize=True, add_generation_prompt=True)
+    if isinstance(request.messages[-1]['content'], list):
+        content = request.messages[-1]['content']
+        for x in content:
+            if x['type'] == 'text':
+                slm.input_str = x['text']
+            elif x['type'] == 'image_url':
+                url = x['image_url']['url']
+                png = url.split('.')[-1]
+                os.system(f"wget {url} -O /data/tmpdir/image.{png}")
+                slm.image_str = f"/data/tmpdir/image.{png}"
+            elif x['type'] == 'image_path':
+                slm.image_str = x['image_path']['path'] if isinstance(x['image_path'], dict) else x['image_path']
+            else:
+                slm.image_str = ''
 
-    token = slm.model.forward_first(tokens)
-    output_tokens = [token]
+    else:
+        slm.input_str = request.messages[-1]['content']
+        slm.history = request.messages
+        tokens = slm.tokenizer.apply_chat_template(slm.history, tokenize=True, add_generation_prompt=True)
 
-    if not isinstance(slm.EOS, list):
-        slm.EOS = [slm.EOS]
+    if "minicpmv2" in request.model.lower():
+        try:
+            image_path = slm.image_str
+        except:
+            slm.image_str = ''
+
+        if slm.image_str:
+            if not os.path.exists(slm.image_str):
+                print("Can't find image: {}".format(slm.image_str))
+
+        slm.encode()
+        token = slm.model.forward_first(slm.input_ids, slm.pixel_values, slm.image_offset)
+        EOS = [slm.ID_EOS, slm.ID_IM_END]
+    else:
+        token =  slm.model.forward_first(tokens)
+        EOS = slm.EOS if isinstance(slm.EOS, list) else [slm.EOS]
 
     if request.stream:
-        def generate_responses():
+        def generate_responses(token):
             yield '{"choices": [{"delta": {"role": "assistant", "content": "'
-            token = output_tokens[0]
+            output_tokens = []
             while True:
-                if token in slm.EOS or slm.model.token_length >= slm.model.SEQLEN:
+                output_tokens.append(token)
+                if token in EOS or slm.model.token_length >= slm.model.SEQLEN:
                     break
-                response_text = slm.tokenizer.decode([token])
-                yield response_text
+                word = slm.tokenizer.decode(output_tokens, skip_special_tokens=True)
+                if "�" not in word:
+                    if len(output_tokens) == 1:
+                        pre_word = word
+                        word = slm.tokenizer.decode([token, token], skip_special_tokens=True)[len(pre_word):]
+                    yield word
+                    output_tokens = []
                 token = slm.model.forward_next()
             yield '"}}]}'
-        return StreamingResponse(generate_responses(), media_type="application/json")
+        return StreamingResponse(generate_responses(token), media_type="application/json")
     
     else:
+        output_tokens = [token]
         while True:
             token = slm.model.forward_next()
-            if token in slm.EOS or slm.model.token_length >= slm.model.SEQLEN:
+            if token in EOS or slm.model.token_length >= slm.model.SEQLEN:
                 break
             output_tokens += [token]
         slm.answer_cur = slm.tokenizer.decode(output_tokens)
         slm.history = []
         return JSONResponse({"choices": [{"delta": {"role": "assistant", "content": slm.answer_cur}}]})
     
-
+### 常规测试
 # curl --no-buffer -X 'POST' \
 #   'http://localhost:8000/llm_tpu/v1/chat/completions' \
 #   -H 'Content-Type: application/json' \
@@ -147,6 +182,27 @@ async def chat_completions(request: ChatRequest):
 #     {
 #       "role": "user",
 #       "content": "hello"
+#     }
+#   ],
+#   "stream": true
+# }'
+
+
+### 图片测试
+# curl -X 'POST' \
+#   'http://localhost:8000/llm_tpu/v1/chat/completions' \
+#   -H 'accept: application/json' \
+#   -H 'Content-Type: application/json' \
+#   -d '{
+#   "model": "minicpmv2",
+#   "messages": [
+#     {
+#       "role": "system",
+#       "content": "You are a helpful assistant."
+#     },
+#     {
+#       "role": "user",
+#       "content": [{"type":"text","text":"what is it?"},{"type":"image_url","image_url":{"url":"https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"}}]
 #     }
 #   ],
 #   "stream": true

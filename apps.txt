@@ -7,5 +7,5 @@ gptsovits, https://github.com/wlc952/GPT-SoVITS-TPU.git, audio
 flowmirror, https://github.com/wlc952/flow_mirror_tpu.git, audio
 whisper, https://github.com/wlc952/whisper-TPU.git, audio
 rmbg, https://github.com/wlc952/rmbg_tpu.git, image
-llm_tpu, git@github.com:wlc952/llm_aigchub.git, text
+llm_tpu, https://github.com/wlc952/llm_aigchub.git, text
 sherpa, https://github.com/wlc952/Kaldi-TPU.git, audio

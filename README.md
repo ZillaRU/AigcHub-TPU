@@ -18,7 +18,7 @@
 | [flowmirror](https://github.com/wlc952/flow_mirror_tpu.git) | 语音对话（目前效果不佳）        | 4375 MB  | `/v1/audio/translation` |              |
 | [whisper](https://github.com/wlc952/whisper-TPU.git)     | 语音转文本                        | 844 MB   | `/v1/audio/transcriptions` |              |
 | [rmbg](https://github.com/wlc952/rmbg_tpu.git)        | 图像去背景                           | 256 MB   | `/v1/images/edit` |              |
-| [llm_tpu](https://github.com/wlc952/llm_aigchub.git)     | 大语言模型（Phi3, Qwen1.5, Qwen2.5）| ~ 1.5-5 G | `/v1/chat/completions` |              |
+| [llm_tpu](https://github.com/wlc952/llm_aigchub.git)     | 大语言模型（Phi3, Qwen1.5,<br>Qwen2.5, MiniCPM-V2.6, MiniCPM3）| ~ 1.5-5 G | `/v1/chat/completions` |              |
 | [sherpa](https://github.com/wlc952/Kaldi-TPU.git)       | 语音转文本                          |  ~ 255 MB  | `/v1/audio/transcriptions` |              |
 
 此处的内容与 `app.txt`中一致。app.txt中每行的第一列是该仓库作为模块的名称，第二列是对应的 github 仓库地址，第三列是该模块的功能类别。
