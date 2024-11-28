@@ -54,8 +54,6 @@ bash scripts/init_app.sh app.txt中的模块名称
 
 ### 3. 启动指定的后端服务
 
-#### 3.1 API 服务（兼容openai-like api）
-
 - 执行 `bash scripts/run.sh 模块名称`
   模块名称可以是多个，用空格分隔。例如，同时启动生图和换脸应用 `bash scripts/run.sh image_gen roop_face`。
   
@@ -83,6 +81,8 @@ bash scripts/init_app.sh app.txt中的模块名称
   
   ![alt text](docs/assets/readme_chat.png)
 
-#### 3.2 AigcHub web demo服务
+### 4 AigcHub web demo 前端服务
 
-- 执行 `bash scripts/run_gradio.sh` 将启动网页端应用集，可切换app标签体验不同服务，部分app会在点击 `启动` 后通过启动新的网页的形式打开。页面如下：![web服务](docs/assets/readme_gradio_hub.png)
+参考samples文件夹，调用api的应用，可在其他客户机上单独运行。
+
+![demo](docs/assets/image.png)
