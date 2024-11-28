@@ -105,7 +105,7 @@ async def text_to_speech(request: TTSRequest):
                   router.models['models'], router.models['g2p'], router.models['lexicon'])
     save_path = _name
     if request.audio_path and os.path.exists(request.audio_path):
-        save_path = convert(src_wav=src_wav, tgt_wav=request.prompt, tone_color_converter=router.models['tone_color_converter'], get_se=get_se, encode_message='Airbox')
+        save_path = convert(src_wav=src_wav, tgt_wav=request.audio_path, tone_color_converter=router.models['tone_color_converter'], get_se=get_se, encode_message='Airbox')
         if isinstance(save_path, dict):
             return {"text": save_path['error'], 'info': 'error message'}
     np_audio, sr = sf.read(save_path)

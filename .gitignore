@@ -6,3 +6,7 @@
 repo/*
 !repo/__init__.py
 debug
+audios
+flagged
+*.wav
+AigcHub-TPU

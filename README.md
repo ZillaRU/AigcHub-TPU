@@ -10,7 +10,7 @@
 | 模块名称     | 功能描述                             | 内存占用 |   兼容openai api | 视频教程 |
 | ------------ | ----------------------------------- | -------- | -------- | -------- |
 | [roop_face](https://github.com/ZillaRU/roop_face.git)      | 人像换脸<br>人脸增强         |          | `/v1/images/variations`<br>`/v1/images/edit` |              |
-| [sd_lcm_tpu](https://github.com/ZillaRU/SD-lcm-tpu.git)     | 文生图<br>图生图<br>语义超分  |          | `/v1/images/generations`<br>`/v1/images/edits`<br>`/v1/images/variations` |              |
+| [sd_lcm_tpu](https://github.com/wlc952/SD-lcm-tpu.git)     | 文生图<br>图生图<br>语义超分  |          | `/v1/images/generations`<br>`/v1/images/edits`<br>`/v1/images/variations` |              |
 | [img2txt](https://github.com/ZillaRU/ImageSpeaking.git)  | 看图说话、生成图像描述           |          | `/v1/images/variations` |              |
 | [upscaler_tpu](https://github.com/ZillaRU/upscaler_tpu.git)   | 图像超分                   |          | `/v1/images/variations` |              |
 | [emotivoice](https://github.com/ZillaRU/EmotiVoice-TPU.git) | 文本转语音（支持情感控制）<br>音色克隆  |           | `/v1/audio/speech`<br>`/v1/audio/translation` |              |

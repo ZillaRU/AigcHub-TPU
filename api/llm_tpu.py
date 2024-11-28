@@ -5,6 +5,7 @@ from typing import Optional
 import argparse
 import os,sys
 import re
+import json
 from pydantic import BaseModel, Field
 from difflib import get_close_matches
 
@@ -94,7 +95,7 @@ class ChatRequest(BaseModel):
 
 @router.post("/v1/chat/completions")
 @change_dir(router.dir)
-async def chat_completions(request: ChatRequest, ):
+async def chat_completions(request: ChatRequest):
     best_match = get_close_matches(request.model, router.models_list, n=1, cutoff=0.0)
     if best_match:
         slm = router.models[best_match[0]]
@@ -115,13 +116,10 @@ async def chat_completions(request: ChatRequest, ):
                 slm.image_str = x['image_path']['path'] if isinstance(x['image_path'], dict) else x['image_path']
             else:
                 slm.image_str = ''
-
     else:
         slm.input_str = request.messages[-1]['content']
-        slm.history = request.messages
-        tokens = slm.tokenizer.apply_chat_template(slm.history, tokenize=True, add_generation_prompt=True)
 
-    if "minicpmv2" in request.model.lower():
+    if "minicpmv" in request.model.lower():
         try:
             image_path = slm.image_str
         except:
@@ -135,12 +133,12 @@ async def chat_completions(request: ChatRequest, ):
         token = slm.model.forward_first(slm.input_ids, slm.pixel_values, slm.image_offset)
         EOS = [slm.ID_EOS, slm.ID_IM_END]
     else:
+        tokens = slm.tokenizer.apply_chat_template(request.messages, tokenize=True, add_generation_prompt=True)
         token =  slm.model.forward_first(tokens)
         EOS = slm.EOS if isinstance(slm.EOS, list) else [slm.EOS]
 
     if request.stream:
         def generate_responses(token):
-            yield '{"choices": [{"delta": {"role": "assistant", "content": "'
             output_tokens = []
             while True:
                 output_tokens.append(token)
@@ -151,12 +149,11 @@ async def chat_completions(request: ChatRequest, ):
                     if len(output_tokens) == 1:
                         pre_word = word
                         word = slm.tokenizer.decode([token, token], skip_special_tokens=True)[len(pre_word):]
-                    yield word
+                    data = {"choices": [{"delta": {"role": "assistant", "content": word}}]}
+                    yield json.dumps(data) + "\n"
                     output_tokens = []
                 token = slm.model.forward_next()
-            yield '"}}]}'
         return StreamingResponse(generate_responses(token), media_type="application/json")
-    
     else:
         output_tokens = [token]
         while True:
@@ -165,7 +162,6 @@ async def chat_completions(request: ChatRequest, ):
                 break
             output_tokens += [token]
         slm.answer_cur = slm.tokenizer.decode(output_tokens)
-        slm.history = []
         return JSONResponse({"choices": [{"delta": {"role": "assistant", "content": slm.answer_cur}}]})
     
 ### 常规测试
