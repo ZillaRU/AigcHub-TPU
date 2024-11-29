@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from api.base_api import BaseAPIRouter, change_dir, init_helper
 from typing import Optional
 import argparse
-import os,sys
+import os
 import re
 import json
 from pydantic import BaseModel, Field
@@ -41,17 +41,16 @@ class AppInitializationRouter(BaseAPIRouter):
                     model_name = os.path.basename(root)
                 tokenizer_dict[model_name] = full_path
 
-
         args = argparse.Namespace(
             devid='0',
             temperature=1.0,
             top_p=1.0,
             repeat_penalty=1.0,
             repeat_last_n=32,
-            max_new_tokens=1024,
+            max_new_tokens=512,
             generation_mode="greedy",
             prompt_mode="prompted",
-            enable_history=True,
+            enable_history=False,
             lib_path=''
         )
 
@@ -67,19 +66,12 @@ class AppInitializationRouter(BaseAPIRouter):
             args.model_path = f"llm_bmodels/{model_name}"
             args.tokenizer_path = tokenizer_path
 
-            # if 'chat' in sys.modules:
-            #     del sys.modules['chat']
-
-            # sys.path.insert(0, f"models/{mm[id]}/python_demo")
-
             module_name = f"llm_models.{mm[id]}.python_demo.pipeline"
             module = importlib.import_module(module_name)
 
             model_class = getattr(module, mm[id])
 
             self.models[f"{model_name}"] = model_class(args)
-
-            # sys.path.remove(f"models/{mm[id]}/python_demo")
 
         return {"message": f"应用 {self.app_name} 已成功初始化。"}
     
@@ -133,6 +125,7 @@ async def chat_completions(request: ChatRequest):
         token = slm.model.forward_first(slm.input_ids, slm.pixel_values, slm.image_offset)
         EOS = [slm.ID_EOS, slm.ID_IM_END]
     else:
+        slm.clear()
         tokens = slm.tokenizer.apply_chat_template(request.messages, tokenize=True, add_generation_prompt=True)
         token =  slm.model.forward_first(tokens)
         EOS = slm.EOS if isinstance(slm.EOS, list) else [slm.EOS]

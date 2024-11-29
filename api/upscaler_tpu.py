@@ -5,7 +5,6 @@ from PIL import Image
 from api.base_api import BaseAPIRouter, change_dir, init_helper
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
-from repo.upscaler_tpu.pipeline import UpscaleModel
 from typing import Optional
 
 app_name = "upscaler_tpu"
@@ -14,6 +13,7 @@ class AppInitializationRouter(BaseAPIRouter):
     dir = f"repo/{app_name}"
     @init_helper(dir)
     async def init_app(self):
+        from repo.upscaler_tpu.pipeline import UpscaleModel
         self.models = UpscaleModel(model='./resrgan4x.bmodel', padding=20)
         return {"message": f"Application {self.app_name} has been initialized successfully."}
     
@@ -27,7 +27,7 @@ router = AppInitializationRouter(app_name=app_name)
 ### 图像超分；兼容openai api，image/variations
 @router.post("/v1/images/variations")
 @change_dir(router.dir)
-async def face_swap(
+async def upscale(
     image: UploadFile = File(...),
     upscale_ratio: Optional[float] = Form(1.0),
 ):

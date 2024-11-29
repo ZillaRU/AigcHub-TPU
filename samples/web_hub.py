@@ -61,9 +61,10 @@ def emotivoice_translation(ip, src_file, ref_file):
 
 ######    02    ######
 PROMPT = [{"role": "system", "content": "You are a helpful assistant."}]
-history = PROMPT
+history = PROMPT[:]
+
 def llm_chat(ip, input_str, image_str, chatbot, model_name):
-    global history, PROMPT
+    global history
     chatbot += [[input_str, ""]]
     history += [{"role": "user", "content": input_str}]
     url = f"http://{ip}/llm_tpu/v1/chat/completions"
@@ -106,6 +107,13 @@ def llm_chat(ip, input_str, image_str, chatbot, model_name):
         yield chatbot
     history += [{"role": "assistant", "content": out_str}]
 
+def reset():
+    global history, PROMPT
+    history = PROMPT[:]
+    return [[None, None]]
+
+def clear():
+    return ""
 
 
 ###### 应用商店 ######
@@ -115,12 +123,6 @@ with gr.Blocks() as app_store:
 
     with gr.Tab("LLM"):
         gr.Markdown("## 语言模型")
-        def reset():
-            global history, PROMPT
-            history = PROMPT
-            return [[None, None]]
-        def clear():
-            return ""
         with gr.Row():
             with gr.Column():
                 model_name = gr.Dropdown(label="Model", choices=["minicpm3", "minicpmv26", "qwen2.5", "phi3"], value="minicpm3")

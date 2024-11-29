@@ -68,12 +68,12 @@ bash scripts/init_app.sh app.txt中的模块名称
   
   ![测试接口](docs/assets/readme_test_api.png)
 
-- 以whisper模块为例，其Request和返回值与openai的 `/v1/audio/transcriptions`兼容。POST的形式统一为 `f"http://{ip}:8000/{appname}/{openai_api}"`，如：`http://localhost:8000/whisper/v1/audio/transcriptions`
+- 以whisper模块为例，其Request和返回值与openai的 `/v1/audio/transcriptions`兼容。POST的形式统一为 `f"http://{ip}:8000/{appname}/{openai_api}"`，如：`http://localhost:8000/whisper_tpu/v1/audio/transcriptions`
 
   ```bash
   ### 测试命令示例
-  curl http://localhost:8000/whisper/v1/audio/transcriptions \
-    -F 'file=@/data/AigcHub-TPU/repo/whisper/datasets/test/demo.wav;type=audio/wav' \
+  curl http://localhost:8000/whisper_tpu/v1/audio/transcriptions \
+    -F 'file=@/data/AigcHub-TPU/repo/whisper_tpu/datasets/test/demo.wav;type=audio/wav' \
     -F 'model=base'
   ```
 
