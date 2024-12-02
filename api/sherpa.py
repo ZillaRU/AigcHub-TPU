@@ -12,9 +12,8 @@ app_name = "sherpa"
 
 def run_shell_command(command):
     pattern = re.compile(r'\{.*?\}')
-    dictionaries = []
-    
-    with subprocess.Popen(command, shell=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT) as process:
+    dict_obj = {"text":""} 
+    with subprocess.Popen(command, shell=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, encoding='utf-8', errors='replace') as process:
         for line in process.stdout:
             matches = pattern.findall(line)
             for match in matches:

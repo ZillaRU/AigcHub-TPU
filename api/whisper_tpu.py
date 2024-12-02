@@ -1,15 +1,12 @@
-import time
 import numpy as np
 from subprocess import run, CalledProcessError
 from api.base_api import BaseAPIRouter, change_dir, init_helper
 from typing import Optional
 from fastapi import File, Form, UploadFile
 from fastapi.responses import JSONResponse, PlainTextResponse
-import logging
-logging.basicConfig(level=logging.INFO)
+from repo.whisper_tpu.python.bmwhisper.transcribe import transcribe
 
-
-app_name = "whisper"
+app_name = "whisper_tpu"
 
 
 def load_audio(file: UploadFile, sr: int = 16000):
@@ -38,7 +35,7 @@ class AppInitializationRouter(BaseAPIRouter):
     dir = f"repo/{app_name}"
     @init_helper(dir)
     async def init_app(self):
-        from repo.whisper.python.bmwhisper import load_model
+        from repo.whisper_tpu.python.bmwhisper import load_model
         args = {}
         args["model_name"]    = "base"
         args["bmodel_dir"]    = "models/BM1684X"
@@ -66,8 +63,6 @@ async def whisper(
     temperature: Optional[float] = Form(0.0),
     timestamp_granularities: Optional[str] = Form(None)
 ):
-    from repo.whisper.python.bmwhisper.transcribe import transcribe
-
     # init whisper parameters
     language = None if language in ["", "string"] else language
     prompt = None if prompt in ["", "string"] else prompt
@@ -77,7 +72,6 @@ async def whisper(
         temperature = tuple(np.arange(temperature, 1.0 + 1e-6, increment))
     else:
         temperature = [temperature]
-    logging.info(f"model: {model}, language: {language}, prompt: {prompt}, response_format: {response_format}, temperature: {temperature}, timestamp_granularities: {timestamp_granularities}")
 
     # Load the audio
     audio = load_audio(file)
@@ -87,17 +81,7 @@ async def whisper(
             'logprob_threshold': -1.0, 'no_speech_threshold': 0.6, 'word_timestamps': False, 'prepend_punctuations': '"\'“¿([{-', 'append_punctuations': '"\'.。,，!！?？:：”)]}、', 'padding_size': 448}
     
     # Transcribe the audio
-    logging.info("{:=^100}".format(f" Start "))
-    audio_start_time = time.time()
-    router.models.init_cnt()
-    router.models.init_time()
     result = transcribe(router.models, audio, temperature=temperature, **args)
-    total_time = time.time() - audio_start_time
-    preprocess_time = total_time - router.models.inference_time
-    router.models.print_cnt()
-    logging.info(f"Preprocess time: {preprocess_time}s")
-    logging.info(f"Inference time: {router.models.inference_time}s")
-    logging.info(f"Total time: {total_time}s")
 
     # timestamp
     if timestamp_granularities is not None:
@@ -117,6 +101,6 @@ async def whisper(
     
 
 #### 测试命令
-# curl http://localhost:8000/whisper/v1/audio/transcriptions \
-#   -F 'file=@/data/AigcHub-TPU/repo/whisper/datasets/test/demo.wav;type=audio/wav' \
+# curl http://localhost:8000/whisper_tpu/v1/audio/transcriptions \
+#   -F 'file=@/data/AigcHub-TPU/repo/whisper_tpu/datasets/test/demo.wav;type=audio/wav' \
 #   -F 'model=base'

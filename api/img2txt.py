@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from fastapi import File, Form, UploadFile
 import base64
 from io import BytesIO
 from PIL import Image
@@ -6,6 +6,7 @@ import numpy as np
 from api.base_api import BaseAPIRouter, change_dir, init_helper
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
+from typing import Optional
 
 app_name = "img2txt"
 
@@ -22,15 +23,20 @@ class AppInitializationRouter(BaseAPIRouter):
     
 router = AppInitializationRouter(app_name=app_name)
 
-class Img2TxtRequest(BaseModel):
-    image: str = Field(..., description="Base64 encoded source image")
-    num_of_description: int = Field(1, description="Number of description")
 
-@router.post("/img_caption")
+### img2txt；兼容openai api，image/variations
+@router.post("/v1/images/variations")
 @change_dir(router.dir)
-async def get_img_caption(request: Img2TxtRequest):
-    image_bytes = BytesIO(base64.b64decode(request.image))
+async def get_img_caption(
+    image: UploadFile = File(...),
+    num_of_description: Optional[int] = Form(1),
+):
+    ori_image_bytes = await image.read()
+    image_bytes = BytesIO(ori_image_bytes)
     Image.open(image_bytes).save("temp.jpg")
-    captions, tags = router.models['pipeline']("temp.jpg", num_return_sequences=request.num_of_description)
-    content = {'captions': captions, 'tags': tags, 'message': 'success'}
-    return JSONResponse(content=jsonable_encoder(content), media_type="application/json")
+    captions, tags = router.models['pipeline']("temp.jpg", num_return_sequences=num_of_description)
+    content = {
+                "created": 1589478378, "captions": captions, "tags": tags,
+                "data": []
+                }
+    return content

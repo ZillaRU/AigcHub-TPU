@@ -1,13 +1,14 @@
-from pydantic import BaseModel, Field
 import base64
 from io import BytesIO
 from PIL import Image
 import numpy as np
 from api.base_api import BaseAPIRouter, change_dir, init_helper
+from fastapi import File, Form, UploadFile
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from repo.roop_face.roop import swap_face, setup_model
 from repo.roop_face.roop.inswappertpu import INSwapper
+from typing import Optional
 
 app_name = "roop_face"
 
@@ -26,40 +27,43 @@ class AppInitializationRouter(BaseAPIRouter):
 
 router = AppInitializationRouter(app_name=app_name)
 
-class FaceSwapRequest(BaseModel):
-    source_img: str = Field(..., description="Base64 encoded source image")
-    target_img: str = Field(..., description="Base64 encoded target image")
-
-class FaceEnhanceRequest(BaseModel):
-    image: str = Field(..., description="Base64 encoded image to enhance")
-    restorer_visibility: float = Field(1.0, description="Visibility for the restorer")
-
-@router.post("/face_swap")
+### 图像变换；兼容openai api，images/variations
+@router.post("/v1/images/variations")
 @change_dir(router.dir)
-async def face_swap(request: FaceSwapRequest):
-    src_image_bytes = BytesIO(base64.b64decode(request.source_img))
-    src_image = Image.open(src_image_bytes)
-    tar_image_bytes = BytesIO(base64.b64decode(request.target_img))
-    tar_image = Image.open(tar_image_bytes)
-    pil_res = swap_face(router.models['face_swapper'], src_image, tar_image)  # Assuming swap_face is a defined function
+async def face_swap(
+    image: UploadFile = File(...),
+    target_img: UploadFile = File(...), #比openai多了一个参数
+    restorer_visibility: Optional[float] = Form(1.0),
+):
+    src_image_bytes = await image.read()
+    src_image = Image.open(BytesIO(src_image_bytes))
+    tar_image_bytes = await target_img.read()
+    tar_image = Image.open(BytesIO(tar_image_bytes))
+    result_image = swap_face(router.models['face_swapper'], src_image, tar_image)
+        
     buffer = BytesIO()
-    pil_res.save(buffer, format='JPEG')
+    result_image.save(buffer, format='JPEG')
     ret_img_b64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
-    content = {'ret_img': [ret_img_b64], 'message': 'success'}
+    content = {"data": [{"b64_json": ret_img_b64}]}
     return JSONResponse(content=jsonable_encoder(content), media_type="application/json")
 
-@router.post("/face_enhance")
+
+### 图像增强；兼容openai api，images/edit
+@router.post("/v1/images/edit")
 @change_dir(router.dir)
-async def face_enhance(request: FaceEnhanceRequest):
-    ori_image_bytes = BytesIO(base64.b64decode(request.image))
-    ori_image = Image.open(ori_image_bytes)
+async def face_enhance(
+    image: UploadFile = File(...),
+    restorer_visibility: Optional[float] = Form(1.0),
+):
+    ori_image_bytes = await image.read()
+    ori_image = Image.open(BytesIO(ori_image_bytes))
     print(f"Restore face with Codeformer")
     numpy_image = np.array(ori_image)
     numpy_image = router.models['restorer'].restore(numpy_image)
     restored_image = Image.fromarray(numpy_image)
-    result_image = Image.blend(ori_image, restored_image, request.restorer_visibility)
+    result_image = Image.blend(ori_image, restored_image, restorer_visibility)
     buffer = BytesIO()
     result_image.save(buffer, format='JPEG')
     ret_img_b64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
-    content = {'ret_img': [ret_img_b64], 'message': 'success'}
+    content = {"data": [{"b64_json": ret_img_b64}]}
     return JSONResponse(content=jsonable_encoder(content), media_type="application/json")

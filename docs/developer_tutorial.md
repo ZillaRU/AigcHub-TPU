@@ -11,6 +11,7 @@
 ├── main_hub.py # 项目启动入口
 ├── repo # 模块源码文件夹，其中每个文件夹都能作为一个独立的应用仓库
 ├── requirements.txt # 项目整体依赖
+├── samples # 基于api开发的应用
 ├── scripts # 项目配置、启动脚本
 ```
 

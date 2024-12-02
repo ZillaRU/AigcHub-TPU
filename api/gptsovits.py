@@ -1,12 +1,13 @@
 from pydantic import BaseModel, Field
-import base64
-import os
+import os, io
+from pydub import AudioSegment
+from fastapi import Response
 from api.base_api import BaseAPIRouter, change_dir, init_helper
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
-import tempfile
 import soundfile as sf
 import logging
+from typing import Optional
 
 app_name = "gptsovits"
 logging.basicConfig(level=logging.INFO)
@@ -24,58 +25,40 @@ class AppInitializationRouter(BaseAPIRouter):
 
 router = AppInitializationRouter(app_name=app_name)
 
+
+### 文本转语音 以及 音色克隆；兼容openai api，audio/speech
 class TTSRequest(BaseModel):
-    ref_audio_path: str = Field(..., description="参考音色语音的路径")
-    ref_content: str = Field(..., description="参考语音的文本")
-    text_content: str = Field(..., description="要转换为语音的文本")
+    # 有意义的兼容参数
+    input: str = Field(..., description="要转换为语音的文本")
+    response_format: Optional[str] = Field('wav', description="音频格式")
+    # 无意义的兼容参数
+    model: Optional[str] = Field("gptsovits", description="（形式参数无意义）")
+    voice: Optional[str] = Field('', description="（形式参数无意义）")
+    speed: Optional[float] = Field(1.0, description="（形式参数无意义）")
+    ## 专有参数
+    audio_path: str = Field('', description="参考音色的路径")
+    audio_content: str = Field('', description="参考音色的文本")
 
-@router.post("/gptsovits_path")
+
+@router.post("/v1/audio/speech")
 @change_dir(router.dir)
-async def gptsovits_api(request: TTSRequest):  
+
+async def gptsovits(request: TTSRequest):  
     try:
         # 调用 gptsovits_long 函数
-        sr, wav_np = router.gptsovits_long(request.ref_audio_path, request.ref_content, request.text_content)
-        # 保存输出音频
-        if not os.path.exists("/data/tmpdir/aigchub"):
-            os.makedirs("/data/tmpdir/aigchub")
-        audio_path = "/data/tmpdir/aigchub/gptsovits_output.wav"
-        sf.write(audio_path, wav_np, sr)
-        logging.info("语音转换成功")
-        # return {"message": "语音转换成功", "audio_path": audio_path}
-        return JSONResponse(content=jsonable_encoder(audio_path), media_type="application/json") # 为方便复制，只返回音频地址
+        sr, np_audio = router.gptsovits_long(request.audio_path, request.audio_content, request.input)
+
+        wav_buffer = io.BytesIO()
+        sf.write(file=wav_buffer, data=np_audio, samplerate=sr, format='WAV')
+        buffer = wav_buffer
+        response_format = request.response_format
+        if response_format != 'wav':
+            wav_audio = AudioSegment.from_wav(wav_buffer)
+            wav_audio.frame_rate=sr
+            buffer = io.BytesIO()
+            wav_audio.export(buffer, format=response_format)
+
+        return Response(content=buffer.getvalue(), media_type=f"audio/{response_format}")
+
     except Exception as e:
-        return {"message": "处理过程中出现错误", "error": str(e)}
-
-class TTSBase64Request(BaseModel):
-    ref_audio_base64: str = Field(..., description="参考音色语音的base64编码")
-    ref_content: str = Field(..., description="参考语音的文本")
-    text_content: str = Field(..., description="要转换为语音的文本")
-
-@router.post("/gptsovits_base64")
-@change_dir(router.dir)
-async def gptsovits_api_base64(request: TTSBase64Request):  
-    try:
-        # 解码 base64 编码的语音
-        ref_audio_data = base64.b64decode(request.ref_audio_base64)
-        
-        # 使用临时文件处理解码后的数据
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp_ref:
-            tmp_ref.write(ref_audio_data)
-            ref_audio_path = tmp_ref.name
-
-        # 调用 gptsovits_long 函数
-        sr, wav_np = router.gptsovits_long(ref_audio_path, request.ref_content, request.text_content)
-        # 手动删除文件
-        os.remove(ref_audio_path)
-
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp_out:
-            sf.write(tmp_out.name, wav_np, sr)
-            with open(tmp_out.name, 'rb') as file:
-                audio_data = file.read()
-            os.remove(tmp_out.name)
-        audio_base64 = base64.b64encode(audio_data).decode()
-        logging.info("base64语音转换成功")
-        # return audio_base64 # 为方便复制，只返回 base64 编码的音频
-        return JSONResponse(content=jsonable_encoder(audio_base64), media_type="application/json") # 为方便复制，只返回 base64 编码的音频
-    except Exception as e:
-        return {"message": "处理过程中出现错误", "error": str(e)}
+        return {"error": str(e), "info": "处理过程中出现错误"}

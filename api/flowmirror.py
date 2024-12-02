@@ -1,13 +1,14 @@
-from pydantic import BaseModel, Field
+from fastapi import File, UploadFile
 import base64
 import os
 from api.base_api import BaseAPIRouter, change_dir, init_helper
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
-import tempfile
+import aiofiles
 import soundfile as sf
 import logging
 import numpy as np
+from typing import Optional
 
 app_name = "flowmirror"
 logging.basicConfig(level=logging.INFO)
@@ -48,52 +49,28 @@ class AppInitializationRouter(BaseAPIRouter):
 
 router = AppInitializationRouter(app_name=app_name)
 
-class TTSRequest(BaseModel):
-    q_audio_path: str = Field(..., description="提问语音的绝对路径")
 
-@router.post("/flowmirror_path")
+### 语音对话；兼容openai api，audio/translation
+@router.post("/v1/audio/translation")
 @change_dir(router.dir)
-async def gptsovits_api(request: TTSRequest):  
+async def gptsovits_api(
+    file: UploadFile = File(...)
+):  
     try:
-        answer = fm_main(router, request.q_audio_path)
+        file_path = f"/data/tmpdir/aigchub/{file.filename}"
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        async with aiofiles.open(file_path, "wb") as buffer:
+            data = await file.read()
+            await buffer.write(data)
 
-        if not os.path.exists("/data/tmpdir/aigchub"):
-            os.makedirs("/data/tmpdir/aigchub")
+        answer = fm_main(router, file_path)
+
+        os.remove(file_path)
         audio_path = "/data/tmpdir/aigchub/flowmirror_output.wav"
         sf.write(audio_path, answer, 16000)
         logging.info("语音回答已生成")
-        return JSONResponse(content=jsonable_encoder(audio_path), media_type="application/json") # 为方便复制，只返回音频地址
+        content = {"text": audio_path, 'info': 'text is the answer audio path'}
+        return content
+
     except Exception as e:
-        return {"message": "处理过程中出现错误", "error": str(e)}
-
-class TTSBase64Request(BaseModel):
-    q_audio_base64: str = Field(..., description="提问语音的base64编码")
-
-@router.post("/flowmirror_base64")
-@change_dir(router.dir)
-async def gptsovits_api_base64(request: TTSBase64Request):  
-    try:
-        # 解码 base64 编码的语音
-        q_audio_base64 = base64.b64decode(request.q_audio_base64)
-        
-        # 使用临时文件处理解码后的数据
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
-            tmp.write(q_audio_base64)
-            audio_path = tmp.name
-
-        answer = fm_main(router, audio_path)
-
-        # 手动删除文件
-        os.remove(audio_path)
-
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp_out:
-            sf.write(tmp_out.name, answer, 16000)
-            with open(tmp_out.name, 'rb') as file:
-                audio_data = file.read()
-            os.remove(tmp_out.name)
-        audio_base64 = base64.b64encode(audio_data).decode()
-        logging.info("base64语音回答已生成")
-        # return audio_base64 # 为方便复制，只返回 base64 编码的音频
-        return JSONResponse(content=jsonable_encoder(audio_base64), media_type="application/json") # 为方便复制，只返回 base64 编码的音频
-    except Exception as e:
-        return {"message": "处理过程中出现错误", "error": str(e)}
+        return {"error": str(e), "info": "处理过程中出现错误"}

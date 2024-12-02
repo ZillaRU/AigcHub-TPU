@@ -35,46 +35,6 @@ tags_metadata = [
     },
 ]
 
-# @app.post("/init/{module_name}", tags=["Init"])
-# async def init_module(module_name: str):
-#     try:
-#         apps_file = "apps.txt"
-#         repo_dir = "repo"
-#         module_found = False
-
-#         # 读取 apps.txt 文件
-#         with open(apps_file, "r") as file:
-#             lines = file.readlines()
-#             for line in lines:
-#                 name, url = line.strip().split(", ")
-#                 if name == module_name:
-#                     module_found = True
-#                     break
-
-#         if not module_found:
-#             raise HTTPException(status_code=404, detail=f"Module {module_name} not found.")
-
-#         # 执行 prepare.sh 和 download.sh
-#         prepare_script = os.path.join(repo_dir, module_name, "prepare.sh")
-#         download_script = os.path.join(repo_dir, module_name, "download.sh")
-
-#         if os.path.exists(prepare_script):
-#             os.chmod(prepare_script, 0o755)
-#             process = await asyncio.create_subprocess_shell(f"{prepare_script}", stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
-#             stdout, stderr = await process.communicate()
-#             if process.returncode != 0:
-#                 raise HTTPException(status_code=500, detail=f"Error running prepare.sh: {stderr.decode()}")
-
-#         if os.path.exists(download_script):
-#             os.chmod(download_script, 0o755)
-#             asyncio.create_task(asyncio.create_subprocess_shell(f"{download_script}", stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE))
-
-#         os.execv(sys.executable, ['python3'] + sys.argv)
-
-#         return {"message": f"Module {module_name} initialized successfully."}
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=str(e))
-
 # 保存当前工作目录
 original_dir = os.getcwd()
 
